@@ -24,7 +24,6 @@
 */
 
 
-
 // Connecting the BME280 Sensor:
 // Sensor              ->  Board
 // -----------------------------
@@ -33,13 +32,18 @@
 // SDA (Serial Data)   ->  A4 on Uno/Pro-Mini, 20 on Mega2560/Due, 2 Leonardo/Pro-Micro
 // SCK (Serial Clock)  ->  A5 on Uno/Pro-Mini, 21 on Mega2560/Due, 3 Leonardo/Pro-Micro
 
-#include <BME280I2C.h>
-#include <Wire.h>
-#include <EEPROM.h>
-#include <TM1638plus.h> // Keyboard / display / LED combo board
-#include <AccelStepper.h>
-
-
+#include <BME280I2C.h>      // Temperature / humidity / pressure
+                            //  by Tyler Glenn - https://github.com/finitespace/BME280
+#include <Wire.h>           // I2C protocol
+#include <EEPROM.h>         // read / write to the processor's internal EEPROM
+#include <TM1638plus.h>     // Keyboard / display / LED combo board
+                            //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
+#include <AccelStepper.h>   // Stepper / servo library with step pulse / dir interface
+                            //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
+#include "TimerOne.h"       // Timer component
+                            //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
+                            //  https://playground.arduino.cc/Code/Timer1/
+                            
 
 BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
                   // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
@@ -58,9 +62,6 @@ TM1638plus tm(pin_Strobe_TM, pin_Clock_TM , pin_DIO_TM);
 #define eeStart  48  // EEPROM Offset for data
 
 
-
-#include "TimerOne.h"
-
 #define pin_Stepper_DIR    6
 #define pin_Stepper_Step   7
 #define pin_Stepper_Enable 5
@@ -74,6 +75,7 @@ AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 #define samplePeriod 100 // 100 ms sensor sampling period
 #define debounce 3       // Keyboard debouncing
 
+
 #define ambientPressureFilter       0.03  // IIR filtering ratio (lower value produce longer time constant)
 #define defaultPressure        105000.00  // Pressure in Pa returned when no sensor is found
 #define defaultAmbientPressure 105000.00  // assumed ambiant pressure in Pa returned when no sensor is found
@@ -81,28 +83,28 @@ AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 #define defaultTemperature         20.00  // temperature in °C returned when no sensor is found
 
 
+// WARNING : When changing min and max value, manually change the text in the SerialCommand procedure accordingly
 
-#define minBPM                    4.0   // minimum respiratory speed
+#define minBPM                    6.0   // minimum respiratory speed
 #define defaultBPM               15.0   // default respiratory speed
 #define stepBPM                   1.0   // adjustment step for respiratory speed
-#define maxBPM                   60.0   // maximum respiratory speed
+#define maxBPM                   40.0   // maximum respiratory speed
 #define maxBPMchange              0.2   // maximum respiratory speed change in proportion of final value per beat (1=100%)
 #define minVolume               100.0   // minimum respiratory volume in milliliters 
 #define defaultVolume           150.0   // default respiratory volume in milliliters 
 #define stepVolume              100.0   // adjustment step for respiratory volume in milliliters 
-#define maxVolume              4000.0   // maximum respiratory volume in milliliters 
+#define maxVolume              1500.0   // maximum respiratory volume in milliliters 
 #define maxVolumeChange           0.25  // maximum respiratory volume change in proportion of final value per beat (1=100%) 
 #define minCompression         1000.00  // minimum compression for the ambu-bag in Pa
 #define stepCompression         500.00  // adjustment step for compression for the ambu-bag in Pa
 #define defaultCompression     3000.00  // default compression for the ambu-bag in Pa
-#define maxCompression        30000.00  // maximum compression for the ambu-bag in Pa
+#define maxCompression        20000.00  // maximum compression for the ambu-bag in Pa
 #define maxCompressionChange      0.5   // maximum compression for the ambu-bag change in proportion of final value per beat (1=100%)
 
 #define startup_message   0   // power up start
 #define error_message    10   // 10 + error code
 #define Menu_message    100   // screen for each menu item 
 #define Stop_message    105   // stop indicator screen  
-
 
 #define btnPrev 7
 #define btnNext 6
@@ -115,15 +117,14 @@ AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 
 
 boolean term,killMove;
-
-int dispDelay,dispPhase,dispCnt,dispParam,timCnt,breathGraphCnt,timerLvl;
-boolean doDisp, sensHumidity, sensTemperature, sensPressure, allSet,active;
-char disp[11];
-float ambientPressure,pressure,relPressure,temperature,humidity;
-long tick,breathe,breathe2,lastKey;
-float BPM,volume,compression;
-byte sc,barGraph,menuItem;
-byte keys[8],kcnt[8],mkeys[8];
+int     dispDelay,dispPhase,dispCnt,dispParam,timCnt,breathGraphCnt,timerLvl;
+boolean doDisp, sensHumidity, sensTemperature, sensPressure, allSet,active,debug;
+char    disp[11];
+float   ambientPressure,pressure,relPressure,temperature,humidity;
+long    tick,breathe,breathe2,lastKey,commTime;
+float   BPM,volume,compression;
+byte    sc,barGraph,menuItem;
+byte    keys[8],kcnt[8],mkeys[8];
 
 // Parameters saved to / recovered from EEPROM
 
@@ -131,7 +132,6 @@ float reqBPM;          // set respiratory frequency
 float reqVolume;       // set respiratory volume in milliliters 
 float reqCompression;  // set compression for the ambu-bag in Pa
  
-
 
 void(* resetFunction) (void) = 0;  // Self reset (to be used with watchdog)
 
@@ -141,9 +141,7 @@ void tab ()
 }
 
 
-
 void eeput (int n)  // records to EEPROM (only if values are validated)
-
 {
     int eeAddress = eeStart;
     boolean isOk=(reqBPM>=minBPM);         
@@ -166,7 +164,6 @@ void eeput (int n)  // records to EEPROM (only if values are validated)
      EEPROM.put(eeAddress, b);
      eeAddress += sizeof(byte);
     }
-    
 }    
 
 void eeget ()
@@ -174,7 +171,6 @@ void eeget ()
     int eeAddress = eeStart;
     float treqBPM,treqVolume,treqCompression;
     byte tac;
-    
 
     EEPROM.get(eeAddress, treqBPM);
     eeAddress += sizeof(float);
@@ -194,7 +190,6 @@ void eeget ()
     if (treqCompression>maxCompression) isOk=false; // Compression in allowed range ?
     if (tac>1) isOk=false; // is the value 0 or 1 ?
     
-    
     if (isOk) 
       {
        reqBPM=treqBPM;
@@ -208,7 +203,6 @@ void eeget ()
        reqCompression=defaultCompression;
        active=false;
       }
-    
     if (term)
      {
       Serial.print((isOk)?F("Read EEPROM Settings: "):F("Read Default Settings: "));
@@ -218,40 +212,149 @@ void eeget ()
       tab();
       Serial.println(reqCompression);
      }
-
 }   
 
+#define CommandMaxLength 80
 
-void error(byte n, boolean lock) 
+byte BufferLength;
+String Buffer= "*********************************************************************************";  // filler
+
+void prstat()
 {
- if (lock) killMove=true;
- if (term)
+ Serial.print(F("\nPatient assisted breathing\tO"));
+ Serial.println((active)?F("N"):F("ff"));
+ Serial.print(F("Ventilation speed\t\t"));
+ Serial.print(reqBPM);
+ Serial.println(F(" cycles / minute"));
+ Serial.print(F("Ventilation volume\t\t"));
+ Serial.print(reqVolume/1000);
+ Serial.println(F(" liter"));
+ Serial.print(F("Ventilation pressure\t\t"));
+ Serial.print(reqCompression/1000);
+ Serial.println(F(" KPa\n"));
+}
+
+
+void meas()
+{
+ Serial.print(F("Sensor Temp:")); 
+ Serial.print(temperature);
+ Serial.print(F("°C\tHumidity:")); 
+ Serial.print(humidity);
+ Serial.print(F("% RH\tPressure:")); 
+ Serial.print(pressure);
+ Serial.print(F(" Pa\tAmbient Pressure:")); 
+ Serial.print(ambientPressure);
+ Serial.print(F(" Pa\tRelative Pressure:")); 
+ Serial.print(relPressure);
+ Serial.println(F(" Pa"));  
+}
+
+void setDisplay(int ph, int dly=std_dly, int param=0) 
+{
+ dispDelay=dly;
+ dispCnt=0;
+ dispPhase=ph;
+ dispParam=param;
+}
+
+void SerialCommand()
+{
+  commTime=millis(); 
+  float r;
+  // char ch=Buffer[1];
+  switch ( Buffer[0])
+   {
+    case '1': // 1 Start assisted breathing
+     Serial.println(F("Breathing started"));
+     active=true;
+    break;
+    case '0': // 0 Stop assisted breathing
+     active=false;
+     Serial.println(F("WARNING: Breathing stopped"));
+     setDisplay(Stop_message,std_dly,0);
+    break;
+    case 'S': // S set Speed (in BPM)
+     Buffer[0]=32;
+     r=Buffer.toFloat();
+     if ((r>=minBPM) && (r<=maxBPM))
+      {reqBPM=r; prstat();} else Serial.println(F("Out of range (6-40BPM)"));  
+    break;
+    case 'V': // V set Volume (in liters)
+     Buffer[0]=32;
+     r=Buffer.toFloat()*1000;
+     if ((r>=minVolume) && (r<=maxVolume))
+      {reqVolume=r; prstat();} else Serial.println(F("Out of range (0.1-1.5l)"));  
+    break;
+    case 'P': // P Set pressure (in KPa)
+     Buffer[0]=32;
+     r=Buffer.toFloat()*1000;
+     if ((r>=minCompression) && (r<=maxCompression))
+      {reqCompression=r; prstat();} else Serial.println(F("Out of range (1-20KPa)"));  
+    break;
+    case 'M': // M show Measurements from the sensor
+     meas();  
+    break;
+    case 'W': // T Terminal mode (human readable)
+     eeput(0);  // Save settings to EEPROM
+     menuItem=0;
+     Serial.println(F("Parameters Written"));  
+    break;
+    case 'D': // D debug (on / off)
+     debug=!debug;
+    break;
+    case 'R': // R Reset
+     cli();
+     resetFunction();
+    break;
+    case '?': // help
+     if (term)
+      {
+       prstat();  
+       Serial.println(F("1 Start assisted breathing")); 
+       Serial.println(F("0 Stop assisted breathing")); 
+       Serial.println(F("S set Speed (in BPM)")); 
+       Serial.println(F("V set Volume (in liters)")); 
+       Serial.println(F("P Set pressure (in KPa)")); 
+       Serial.println(F("M show Measurements from the sensor")); 
+       Serial.println(F("W Write parameters to permanent memory")); 
+       Serial.println(F("D debug (on / off)")); 
+       Serial.println(F("R Reset")); 
+       Serial.println(F("? print this")); 
+      }
+      break;
+    default:   // Unknown command 
+     Serial.println(F("Unknown command. type '?' for instructions.")); 
+    break;
+   }      
+}
+
+
+void SerialWait(int t)
+{
+ while (t--) 
   {
-   Serial.print((lock)?F("Error #"):F("Status #"));
-   Serial.println(n);
+   delayMicroseconds(10); // 10 usec delay
+   while (Serial.available())
+    {       
+      char inChar = (char)Serial.read();
+      if (inChar != '\r') { 
+      //Serial.print(inChar); 
+      if (inChar == '\n') 
+      {
+        Buffer += (char)0; 
+       SerialCommand();
+       BufferLength=CommandMaxLength; // force buffer reset
+      } 
+      else
+      {
+       Buffer += inChar;
+       BufferLength++;
+      }
+      if (BufferLength>=CommandMaxLength) {BufferLength=0;Buffer = "";}  // Overflow buffer reset
+      }
+    }
   }
- delay (10);
- byte n2=n;
-  while (n--)
-  {
-   digitalWrite(pin_Beep, LOW);
-   delay((lock)?200:80);
-   digitalWrite(pin_Beep, HIGH);
-   delay(200);
-  } 
- while (lock) {
-  // if lock disable interrupt and loop forever repeating error code every 5 seconds
-  delay (5000);
-  n=n2;
-  while (n--)
-  {
-   digitalWrite(pin_Beep, LOW);
-   delay(200);
-   digitalWrite(pin_Beep, HIGH);
-   delay(200);
-  } 
- }
- 
 }
 
 
@@ -264,7 +367,6 @@ void doLEDs(uint8_t value) {
 }
 
 
-
 void Timer() 
 {
 timerLvl++;  
@@ -272,7 +374,6 @@ if (!killMove) stepper.run();
 if (timerLvl>1)  // only does the motor update if nested more than 1 level
 {
  timerLvl--; 
-  
 }
 else
 {
@@ -304,7 +405,7 @@ switch (timCnt % 50) {        // 10 ms tick period for interface handling
        dispDelay=60;
       break;
     case 5:
-       strcpy(disp,"SOFT 0.10");
+       strcpy(disp,"SOFT 0.11");
        dispDelay=100;
        dispPhase=99;
       break;
@@ -443,16 +544,6 @@ timerLvl--;
 }
 
 
-void setDisplay(int ph, int dly=std_dly, int param=0) 
-{
- dispDelay=dly;
- dispCnt=0;
- dispPhase=ph;
- dispParam=param;
-}
-
-
-
 void readSensors() // Works no matter if sensor is present or not (returns default values if not present)
 
 {
@@ -481,20 +572,10 @@ void readSensors() // Works no matter if sensor is present or not (returns defau
     }
     else temperature=defaultTemperature;
    relPressure=pressure-ambientPressure; 
-   if ((term) && (sc++>10))
+   if ((term) && (sc++>10) && (debug))
     {
      sc=0;
-     Serial.print(F("Sensor Temp:")); 
-     Serial.print(temperature);
-     Serial.print(F("°C\tHumidity:")); 
-     Serial.print(humidity);
-     Serial.print(F("% RH\tPressure:")); 
-     Serial.print(pressure);
-     Serial.print(F(" Pa\tAmbient Pressure:")); 
-     Serial.print(ambientPressure);
-     Serial.print(F(" Pa\tRelative Pressure:")); 
-     Serial.print(relPressure);
-     Serial.println(F(" Pa")); 
+     meas();
     }
 }
 
@@ -507,7 +588,6 @@ void setup() {
   setDisplay(startup_message); 
   pinMode(pin_Beep, OUTPUT);
   digitalWrite(pin_Beep, LOW);  // active (inverted)
-  
   pinMode(pin_Stepper_DIR, OUTPUT);
   digitalWrite(pin_Stepper_DIR, LOW);     // active (inverted)
   pinMode(pin_Stepper_Step, OUTPUT);
@@ -519,7 +599,7 @@ void setup() {
   int c=1000;
   while (!Serial && c--) delay(1); // wait for serial port to connect. Needed for native USB
   term=Serial; 
-  if (term) Serial.println(F("Open Source Ventilator Ver 1.00"));
+  if (term) Serial.println(F("Open Source Ventilator Ver 0.11"));
   delay (100);
   digitalWrite(pin_Beep, HIGH);  // inactive (inverted)
   Wire.begin();
@@ -556,20 +636,17 @@ void setup() {
  BPM=reqBPM;                 // Start from these values without sweep
  volume=reqVolume;
  compression=reqCompression;
- 
+ Buffer="?";  // send informations to the serial port
+ SerialCommand();
+ Buffer="";
  readSensors();   
- 
-  //error(1,false);
-
  tick=millis();
  breathe=tick-int(60000/BPM);
  killMove=false;
  stepper.setMaxSpeed(3500);
  stepper.setAcceleration(20000);
  stepper.moveTo(0);
-
 }
-
 
 
 void loop() {
@@ -578,8 +655,6 @@ void loop() {
 
   if (millis()>tick+samplePeriod)
    {
-
-    
     tick=tick+samplePeriod;
     readSensors();
     allSet=((reqBPM==BPM) && (reqVolume==volume) && (reqCompression==compression));
@@ -630,7 +705,6 @@ void loop() {
       if ((keys[btnNext]) && (menuItem<MenuItems-1)) {menuItem++;setDisplay(Menu_message+10*menuItem,std_dly,0);}  // Next menu item (no rollover)
       mkeys[btnNext]=keys[btnNext];
      }
-
     if (keys[btnDn] != mkeys[btnDn])  // Lower the value
      {
       if (keys[btnDn])
@@ -653,7 +727,6 @@ void loop() {
               if (reqCompression<minCompression) reqCompression=minCompression;
              break;
            }
-       
         }
       mkeys[btnDn]=keys[btnDn];
      }
@@ -684,13 +757,10 @@ void loop() {
         }
       mkeys[btnUp]=keys[btnUp];
      }
-         
-            
    }
-
     if (millis()>breathe+int(60000/BPM))  // start of a cycle
      {
-      if (!allSet)
+      if (!allSet) // Manage the ramp up / ramp down of parameters
        {
         if (BPM<minBPM) BPM=minBPM;
         if (BPM>maxBPM) BPM=maxBPM;
@@ -731,7 +801,7 @@ void loop() {
        } 
       breathe=breathe+int(60000/BPM);
       breathGraphCnt=10; // blinks at the start of a cycle   
-
+      
       // Values are just a starting point
       stepper.setMaxSpeed(volume*1.5);
       stepper.setAcceleration(volume*4);
@@ -741,5 +811,5 @@ void loop() {
      {
       stepper.moveTo(0);
      }
-
+ SerialWait(10); // wait for 100 usec
 }
