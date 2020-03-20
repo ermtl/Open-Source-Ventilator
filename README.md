@@ -4,9 +4,11 @@ Complete control software for an emergency medical ventilator.
 This software is designed to control a Bag Valve Mask (BVM) AmbuBag medical Ventilator as part of the global effort to develop a fast, effective, easily replicable device using distributed digital manufacturing techniques including 3D printing, CNC or laser cutting. The project uses an Arduino Nano with Atmega328P. The software can be used with a wide range of mechanical designs.
 
 Short video presentation / demo : 
+
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=izh4YnG1fPI
 " target="_blank"><img src="http://img.youtube.com/vi/izh4YnG1fPI/0.jpg" 
 alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
 # Main components
