@@ -7,7 +7,7 @@ Short video presentation / demo :
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=izh4YnG1fPI
 " target="_blank"><img src="http://img.youtube.com/vi/izh4YnG1fPI/0.jpg" 
-alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+alt="IMAGE ALT TEXT HERE" width="480" height="360" border="10" /></a>
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
