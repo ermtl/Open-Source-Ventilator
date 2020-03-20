@@ -122,5 +122,6 @@ Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition include
 # versions
 
   0.10 - Initial public version
+  
   0.11 - Add interactive terminal command line complete control (through USB link)
           A minimal device without screen or keyboard is possible with the same software.
