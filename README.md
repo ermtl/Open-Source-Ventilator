@@ -23,15 +23,19 @@ Since the software uses industry standard STEP/DIR interface, any external drive
 
 
 To compile the software, you will need the following libraries (all from the library manager) :
+```
 #include <BME280I2C.h>      // Temperature / humidity / pressure
-https://github.com/finitespace/BME280
+                            //  by Tyler Glenn - https://github.com/finitespace/BME280
 #include <Wire.h>           // I2C protocol
 #include <EEPROM.h>         // read / write to the processor's internal EEPROM
 #include <TM1638plus.h>     // Keyboard / display / LED combo board
-https://github.com/gavinlyonsrepo/TM1638plus
+                            //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
 #include <AccelStepper.h>   // Stepper / servo library with step pulse / dir interface
-http://www.airspayce.com/mikem/arduino/AccelStepper/
-
+                            //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
+#include "TimerOne.h"       // Timer component
+                            //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
+                            //  https://playground.arduino.cc/Code/Timer1/
+```
 # Software Functions
 
 The software is contained in an Arduino "sketch" with many comments, nearly all parameters are in defined constants and can be easily changed. It is herein distributed under the GPL V3.0 licence. The software has the following functions:
@@ -67,3 +71,56 @@ When changing the settings, the change will be gradual with each subsequent brea
 
 - data acquisition.
 Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition includes filtering of the pressure 
+
+# Required hardware
+
+- Arduino Nano
+  Any arduino Nano or clone can be used, as long as it contains an Atmega328 processor
+  https://www.aliexpress.com/item/32845440152.html
+- Bosch Sensortech BME280 / BMP280 sensor breakout
+  Warning, there are 3.3V breakout and 5V breakout boards. Some have 4 pins, others 6 pins.
+  They can all be used. Connect the supply accordingly, the 2 extra pins are unused (SPI)
+  https://www.aliexpress.com/item/32672562548.html
+- TM1638 Display / Leds / Keyboard combo module
+  They all have the pin header on top, you can remove the plastic part and bend the pin for side connection
+  There are other types of boards with TM1638 chip with 16 buttons, but they lack the LEDs that are important to monitor air pressure measurement.
+  https://www.aliexpress.com/item/32807348409.html
+- Beeper
+  This active beeper is easy to drive and the sound level is mild. 
+  https://www.aliexpress.com/item/1893768547.html
+  Here is a louder one.
+  https://www.aliexpress.com/item/32671465979.html
+- Regulator
+  Even at 12V, the motor can generate spikes that will damage the controller's regulator. 
+  These regulators are cheap, and rated for high voltage (max 50V). 
+  The potentiometer needs to be adjusted for 7.5V to 8V
+  https://www.aliexpress.com/item/1859113573.html
+- Driver and motor.
+  The driver and motor required will depend on the mechanical design used.
+  here are a few :
+  Cheapest, but rugged A4988 Stepstick:
+  https://www.aliexpress.com/item/1851964212.html
+  DRV8825 StepStick
+  https://www.aliexpress.com/item/1937880897.html
+  TMC2209 StepStick (silent, with torque detection). 
+  Could approximate a pressure measurement for a setup without pressure sensor.
+  https://www.aliexpress.com/item/33029587820.html
+  TMC5160 StepStick (by far the best option, 4.4A/phase, can drive NEMA34 steppers)
+  https://www.aliexpress.com/item/33051621409.html
+
+  For direct drive, a large Nema23 motor with low current and high torque would be best. 
+  these motors quickly lose torque as their speed increases, but in this application, 
+  their performance should be a good match.
+  This one is rated for 1.9NM with only 2.12A (bipolar mode)
+  https://www.aliexpress.com/item/4000032106569.html
+
+  For designs using a ballscrew, a servomotor is required to get the necessary speed.
+  Here is a good, not too expensive option with integrated controller:
+  180W 3000 RPM version https://www.aliexpress.com/item/4000333220649.html
+  100W 3000 RPM version https://www.aliexpress.com/item/32945533935.html
+
+# versions
+
+  0.10 - Initial public version
+  0.11 - Add interactive terminal command line complete control (through USB link)
+          A minimal device without screen or keyboard is possible with the same software.
