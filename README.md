@@ -6,7 +6,7 @@ This software is designed to control a Bag Valve Mask (BVM) AmbuBag medical Vent
 Short video presentation / demo : 
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=izh4YnG1fPI
-" target="_blank"><img src="http://img.youtube.com/vi/izh4YnG1fPI/0.jpg" 
+" target="_blank"><img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/i1.jpg" 
 alt="IMAGE ALT TEXT HERE" width="480" height="360" border="10" /></a>
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
