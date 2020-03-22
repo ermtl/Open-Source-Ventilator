@@ -94,7 +94,7 @@ width="180" height="180" border="10" />
 width="180" height="180" border="10" />
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/TMC5160.jpg" 
 width="180" height="180" border="10" />
-<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/180W-Servo.jpg" 
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/180W-Servo.png" 
 width="180" height="180" border="10" />
 
 - Arduino Nano
