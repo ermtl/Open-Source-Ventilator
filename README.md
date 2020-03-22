@@ -129,7 +129,13 @@ Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition include
 
 # versions
 
-  0.10 - Initial public version
+  - 0.10 Initial public version
   
-  0.11 - Add interactive terminal command line complete control (through USB link)
-          A minimal device without screen or keyboard is possible with the same software.
+  - 0.11 Add interactive terminal command line complete control (through USB link)
+         A minimal device without screen or keyboard is possible with the same software.
+
+  - 0.12 Add "Assist Control" mode with adaptive negative pressure trigger cycle.
+This mode was requested by a MD : "ER doc here chiming in, hopefully I can answers some questions or clarify minimal requirements.The basic mode you need is Assist Control. This mode provides a breath whenever the patient triggers a breath (by inhaling and creating negative pressure past a certain threshold) or whenever the patient is due for a breath (based on the set rate). The breath it provides are either a fixed volume (and the doc monitors the pressures delivered) or a fixed pressure (and the doc monitors the volume delivered). AC/volume is often called Volume Control, and AC/pressure is often called Pressure Control. While I do not have direct experience ventilating COVID patients yet, these 2 modes will cover 99% of ICU cases." 
+This version also adds editing, permanent storage and USB setting of the new Patient Synchronization parameter and an audible alarm when pressure remains above 120% of preset pressure for 1 second or mode.
+         
+         and settable percentage of the cycle time becomes available 
