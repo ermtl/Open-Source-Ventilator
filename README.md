@@ -11,7 +11,7 @@ Short video presentation / demo :
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
-Requirements for a <a href="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/UK Specifications for a minimal function ventilator device.pdf"/>minimal emergency ventilator device</a> have been issued by the UK government. This controller strives to follow these guidelines.
+NOTE: Requirements for a <a href="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/UK Specifications for a minimal function ventilator device.pdf"/>minimal emergency ventilator device</a> have been issued by the UK government. This controller strives to follow these guidelines.
 
 # Main components
 
