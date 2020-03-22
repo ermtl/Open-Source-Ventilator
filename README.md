@@ -13,7 +13,7 @@ Short video presentation / demo :
 
 NOTE: Requirements for a <a href="https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification"  target=_"blank" />   minimal emergency ventilator device</a> [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification){:target="_blank"} have been issued by the UK government. This controller strives to follow these guidelines.
 
-<a href="http://example.com/" target="_blank">example</a>
+<a target="_blank" href="http://example.com/">example</a>
 
 # Main components
 
