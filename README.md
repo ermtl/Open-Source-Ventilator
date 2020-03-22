@@ -13,6 +13,8 @@ Short video presentation / demo :
 
 NOTE: Requirements for a <a href="https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification"  target=_"blank" />   minimal emergency ventilator device</a> [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification){:target="_blank"} have been issued by the UK government. This controller strives to follow these guidelines.
 
+<a href="http://example.com/" target="_blank">example</a>
+
 # Main components
 
 - The arduino Nano was chosen as a controller for it's ability to perform the realtime tasks with relatively low latency (step generation & data acquisition) and it's universal availability. More sophisticated controllers such as the Raspberry Pi usually have real time issues and unpredictable latency. Also, the Arduino ecosystem is very rich in well tested libraries.
