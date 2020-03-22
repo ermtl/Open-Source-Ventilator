@@ -11,7 +11,7 @@ Short video presentation / demo :
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
-NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification){:target="_blank"} have been issued by the UK government. This controller strives to follow these guidelines.
+NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification) have been issued by the UK government. This controller strives to follow these guidelines.
 
 # Main components
 
