@@ -14,8 +14,9 @@ Short video presentation / demo :
 # Main components
 
 - The arduino Nano was chosen as a controller for it's ability to perform the realtime tasks with relatively low latency (step generation & data acquisition) and it's universal availability. More sophisticated controllers such as the Raspberry Pi usually have real time issues and unpredictable latency. Also, the Arduino ecosystem is very rich in well tested libraries.
+
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/arduinoNanoTerminals.jpg" 
-width="360" height="360" border="10" />
+width="180" height="180" border="10" />
 - The Bosch Sensortech BME280 / BMP280 sensor allows precise measurement of the air pressure delivered to the patient. It also allows measurement of the temperature and pressure (BME280 only). The software allows to use either of these. It'a a well known, mass produced, low cost sensor. 
 https://www.bosch-sensortec.com/products/environmental-sensors/humidity-sensors-bme280/
 
