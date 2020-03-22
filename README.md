@@ -11,9 +11,7 @@ Short video presentation / demo :
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
-NOTE: Requirements for a <a href="https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification"  target=_"blank" />   minimal emergency ventilator device</a> [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification){:target="_blank"} have been issued by the UK government. This controller strives to follow these guidelines.
-
-<a target="_blank" href="http://example.com/">example</a>
+NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification){:target="_blank"} have been issued by the UK government. This controller strives to follow these guidelines.
 
 # Main components
 
@@ -32,7 +30,6 @@ The stepstick stepper motor drivers are widely available as they are used to dri
 When used with 24V and a low current/high torque NEMA23 motor, they can offer a very good torque. There are several types depending on the chip they use (A4988 / DRV8825 / Trinamic TMC2209 & TMC5160). The TMC5160 drives up to 4.4Amps and is even suitable for a NEMA24 or NEMA34 motor. All Trinamic drivers include advanced functions such as load  measurement, stall prevention and detection, noiseless operation, etc ...
 https://www.trinamic.com/products/integrated-circuits/
 Since the software uses industry standard STEP/DIR interface, any external driver may be used to control a stepper, a servo-stepper or a 3 phases servo. A servo would probably be required for a leadscrew design, while a stepper would be more suited to a direct drive design.
-
 
 To compile the software, you will need the following libraries (all from the library manager) :
 ```
