@@ -84,7 +84,7 @@ Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition include
 
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/arduinoNanoTerminals.jpg" 
 width="180" height="180" border="10" />
-<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/BMP280.png" 
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/BME280.png" 
 width="180" height="180" border="10" />
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/TM1638.jpg" 
 width="180" height="180" border="10" />
