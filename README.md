@@ -82,6 +82,21 @@ Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition include
 
 # Required hardware
 
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/arduinoNanoTerminals.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/BMP280.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/TM1638.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/Beeper1.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/LM2596.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/TMC5160.jpg" 
+width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/180W-Servo.jpg" 
+width="180" height="180" border="10" />
+
 - Arduino Nano
   Any arduino Nano or clone can be used, as long as it contains an Atmega328 processor
   https://www.aliexpress.com/item/32845440152.html
