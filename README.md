@@ -11,6 +11,8 @@ Short video presentation / demo :
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
+Requirements for a <a href="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/UK Specifications for a minimal function ventilator device.pdf"/>minimal emergency ventilator device</a> have been issued by the UK government. This controller strives to follow these guidelines.
+
 # Main components
 
 - The arduino Nano was chosen as a controller for it's ability to perform the realtime tasks with relatively low latency (step generation & data acquisition) and it's universal availability. More sophisticated controllers such as the Raspberry Pi usually have real time issues and unpredictable latency. Also, the Arduino ecosystem is very rich in well tested libraries.
