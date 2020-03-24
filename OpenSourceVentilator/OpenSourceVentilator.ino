@@ -38,6 +38,7 @@
          to bypass the checks leading to malfunction have been corrected (NaN detection).
 
     0.14 This version include proper timing, speed and acceleration for the motor control.
+         The pressure controlled and volume controlled modes are implemented.
     
     
 
