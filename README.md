@@ -159,6 +159,6 @@ This version is a major reorganization of the code done to get a more modular so
 This version also implements most of the guidelines in the UK [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification) specifications. Namely, all variable limits have been tweaked and the variable Inspiratory:Expiratory ratio is fully functionnal.
 A bug that allowed floating point variables retrieved from a garbage filled EEPROM to bypass the checks leading to malfunction have been corrected (NaN detection).
 
-    0.14 This version include proper timing, speed and acceleration for the motor control.
+  - 0.14 This version include proper timing, speed and acceleration for the motor control.
          The pressure controlled and volume controlled modes are implemented.
     
