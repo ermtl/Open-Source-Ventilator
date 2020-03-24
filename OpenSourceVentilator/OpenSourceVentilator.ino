@@ -25,8 +25,20 @@
          Patient Synchronization parameter and an audible alarm when pressure remains 
          above 120% of preset pressure for 1 second or mode.
 
-    0.13 This version is reorganized for better code modularity
+    0.13 This version is reorganized for better code modularity, asymmetric breathing
+         and bug fix. It is a major reorganization of the code done to get a more 
+         modular software, ready for bringing in other sensors, a different user 
+         interface and ports to other controller architectures. Very long functions 
+         are broken down into smaller functionnal blocks that should be much easier 
+         to understand and modify, each global variable is commented. 
+         This version also implements most of the guidelines in the UK minimal emergency 
+         ventilator device specifications. Namely, all variable limits have been tweaked 
+         and the variable Inspiratory:Expiratory ratio is fully functionnal. 
+         A bug that allowed floating point variables retrieved from a garbage filled EEPROM 
+         to bypass the checks leading to malfunction have been corrected (NaN detection).
 
+    0.14 This version include proper timing, speed and acceleration for the motor control.
+    
     
 
     This program is free software: you can redistribute it and/or modify
@@ -86,6 +98,7 @@
 #define stepExpirationRatio         0.2   // adjustment step for portion of the cycle for breath synchronisation
 #define defaultExpirationRatio      1.2   // default portion of the cycle for breath synchronisation
 #define maxExpirationRatio          3.00  // maximum portion of the cycle for breath synchronisation
+#define failVolumeRatio             0.90  // In CP mode, Alarm if pressure reached before that portion of programmed volume.
 
 
 
@@ -96,6 +109,24 @@
 #define defaultHumidity            50.00  // humidity in % RH returned when no sensor is found
 #define defaultTemperature         20.00  // temperature in °C returned when no sensor is found
 
+
+
+/*******************************   MOTOR PARAMETERS   *******************************
+ *    
+ *     These values will be highly dependant on mechanical design.
+ *     When modifying the values, always check with an oscilloscope that the movements completes    
+ *     without overlaps and without too much idle time. 
+ *     Also check that the motor can properly follow the speed acceleration required under load.
+ *     Wrong values can cause unpredictables moves and motor stalls.
+ *     The worst case scenario is at max BPM, with max volume, max sync period and max ratio
+ *     With default parameters, the whole compression can become as short as 250 ms
+ */
+
+#define motorSpeed               5000     // Speed for 1 liter/second
+#define motorAcceleration        8500     // Acceleration for 1 liter / second (inverse square of flow)
+#define motorMaxAcceleration    30000     // deceleration when pressure limit reached
+#define motorVolumeRatio            0.8   // Ratio of distance in steps to air volume in step per milliliter.
+                                          
 
 /*******************************   HARDWARE OPTIONS   *******************************
  *    
@@ -295,6 +326,7 @@ AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 #define startup_message       0    // power up start
 #define error_message        10    // 10 + error code
 #define Menu_message        100    // screen for each menu item 
+#define Measurement_Start   101    // Screen with "start" message
 #define Stop_message        102    // stop indicator screen  
 #define Measurement_Message 103    // first of measurement messages
 
@@ -323,6 +355,7 @@ boolean doDisp,                // indicates if a display update is required or n
         allSet,                // True if all actual values match the programed values, false when ramping values up or down
         active,                // True if the machine is currently doing breathing cycles, false otherwise
         motorState,            // True if the motor is activated, false otherwise, false otherwise
+        CVmode,                // CV or CP mode indicator; 
         debug;                 // True if a debugging mode is used, false otherwise
 char    disp[dispBufferLength];// Display data buffer
 float   ambientPressure,       // Calculated ambiant air pressure (averaged)
@@ -346,9 +379,12 @@ long    tick,                  // counter used to trigger sensor measurements
 float   BPM,                   // beats Per Minute. This is the minimum breathing rate, as defined by the user
         volume,                // Breathing volume per cycle
         compression,           // Max / target compression while inhaling
-        compressionScale;      // Scale of the compression relative to set value
+        compressionScale,      // Scale of the compression relative to set value
+        volumeScale;           // Scale of the volume relative to set value
 byte    sc,                    // counter for displaying debugging info about the sensors 
+        breathPhase,           // Current phase of the breathing cycle;
         barGraph,              // segments of the pressure bar graph
+        bargraphDot,           // rate indicator blinking segment on the bargraph
         menuItem,              // Menu item currently being set by the user
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
 byte    keys[maxBtn],          // Debounced keyboard keys
@@ -513,6 +549,9 @@ void eeput (int n)  // records to EEPROM (only if values are validated)
    eeAddress += sizeof(float);
    EEPROM.put(eeAddress, expirationRatio);
    eeAddress += sizeof(float);
+   b=(CVmode)?1:0;
+   EEPROM.put(eeAddress, b);
+   eeAddress += sizeof(byte);
   }
 }    
 #endif
@@ -521,7 +560,7 @@ void eeget ()
 {    
 #ifdef E2PROM
  int eeAddress = eeStart;
- byte tac;
+ byte tac,cvm;
 
  EEPROM.get(eeAddress, reqBPM);
  eeAddress += sizeof(float);
@@ -535,9 +574,12 @@ void eeget ()
  eeAddress += sizeof(float);
  EEPROM.get(eeAddress, expirationRatio);
  eeAddress += sizeof(float);
+ EEPROM.get(eeAddress, cvm);
+ eeAddress += sizeof(byte);
  // Check if the data is coherent
  boolean isOk=checkValues();
  if (tac>1) isOk=false; // is the value 0 or 1 ?
+ if (cvm>1) isOk=false; // is the value 0 or 1 ?
  if (!isOk) 
   {
    reqBPM          = defaultBPM;
@@ -546,8 +588,10 @@ void eeget ()
    syncRatio       = defaultSyncRatio;
    expirationRatio = defaultExpirationRatio;
    tac=0;
+   cvm=1;
   }
  active=(tac>0);  
+ CVmode=(cvm>0);  
  if (term) Serial.print((isOk)?F("Read EEPROM Settings\n"):F("Read Default Settings\n"));
 #else
  reqBPM          = defaultBPM;
@@ -556,6 +600,7 @@ void eeget ()
  syncRatio       = defaultSyncRatio;
  expirationRatio = defaultExpirationRatio;
  active=false;
+ CVmode=true;
  if (term) Serial.print(F("Read Default Settings\n"));
 #endif
 }   
@@ -563,15 +608,16 @@ void eeget ()
 
 #ifdef USBcontrol
 
-#define CommandMaxLength 80
+#define CommandMaxLength 30
 
 byte BufferLength;
-String Buffer = "*********************************************************************************";  // filler
+String Buffer = "*******************************";  // filler
 
 void prstat()
 {
  Serial.print(F("\nPatient assisted breathing\tO"));
  Serial.println((active)?F("N"):F("ff"));
+ Serial.println((CVmode)?F("CV mode"):F("CP mode"));
  Serial.print(F("Ventilation speed\t\t"));
  Serial.print(reqBPM);
  Serial.println(F(" cycles / minute"));
@@ -581,7 +627,7 @@ void prstat()
  Serial.print(F("Ventilation pressure\t\t"));
  Serial.print(reqCompression/1000);
  Serial.println(F(" KPa"));
- Serial.print(F("Patient synchonisation\t\t"));
+ Serial.print(F("Patient synchonization\t\t"));
  Serial.print(int(syncRatio*100.1));
  Serial.print(F(" % of cycle\n"));
  Serial.print(F("Expiration ratio\t\t"));
@@ -593,12 +639,17 @@ void SerialCommand()
 {
   commTime=millis(); 
   float r;
-  // char ch=Buffer[1];
+  char ch=Buffer[1];
   switch ( Buffer[0])
    {
     case '1': // 1 Start assisted breathing
      Serial.println(F("Breathing started"));
      active=true;
+    break;
+    case 'C': // CV / CP mode
+     if (ch='V') CVmode=true; 
+     if (ch='P') CVmode=false; 
+     Serial.println((CVmode)?F("CV mode"):F("CP mode"));
     break;
     case '0': // 0 Stop assisted breathing
      active=false;
@@ -657,6 +708,8 @@ void SerialCommand()
       {
        prstat();  
        Serial.println(F("1 Start assisted breathing")); 
+       Serial.println(F("CV sets Constant Volume mode")); 
+       Serial.println(F("CP sets Constant Pressure mode")); 
        Serial.println(F("0 Stop assisted breathing")); 
        Serial.println(F("S set Speed (in BPM)")); 
        Serial.println(F("V set Volume (in liters)")); 
@@ -743,7 +796,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 5:
-     strcpy(disp,"SOFT 0.13");
+     strcpy(disp,"SOFT 0.14");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -773,6 +826,7 @@ void displayMenu()
     break;
   case 101:
      strcpy(disp,"START  _");
+     disp[6]=(CVmode)?'V':'P';
      dispPhase=(dispParam==0)?100:103;
      dispDelay=80;
     break;
@@ -870,7 +924,7 @@ void Timer()
 #endif     
      break;
     case 20:      // update the bargraph
-     displayBargraph((breathGraphCnt>0)?barGraph-4:barGraph);
+     displayBargraph((breathGraphCnt>0)?barGraph-bargraphDot:barGraph);
      if (breathGraphCnt) breathGraphCnt--;
      break;
     case 30:      // update the keyboard
@@ -1013,7 +1067,7 @@ void setup() {
  int c=1000;
  while (!Serial && c--) delay(1); // wait for serial port to connect. Needed for native USB (non blocking)
  term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator Ver 0.13"));
+ if (term) Serial.println(F("Open Source Ventilator Ver 0.14"));
  Wire.begin();
  detectBMEsensor();
 #ifdef CurrentSense
@@ -1030,12 +1084,12 @@ void setup() {
  compression=reqCompression;
  readSensors();   
  tick=millis();
- breathe=0;
- breathLength=0;  // Forces the first breathing cycle immediately when entering the loop 
+ breathLength=int(60000/BPM);
+ breathe==tick-breathLength;
  stopMove=false;
- stepper.setMaxSpeed(3500);
- stepper.setAcceleration(20000);
- stepper.moveTo(0);
+// stepper.setMaxSpeed(3500);
+// stepper.setAcceleration(20000);
+// stepper.moveTo(0);
 }
 
 void limitValues(float &B,float &V,float &C,float &D,float &E) // prevent values from going outside of their respective limits 
@@ -1085,8 +1139,10 @@ void pressUpDown()
  switch(menuItem)
   {
    case 0:
-      dispParam=(dispParam==0)?1:0;
+      if (n<0) dispParam=(dispParam==0)?1:0;  // button Dn triggers extended data
+      if (n>0) CVmode=!CVmode;                // button Up triggers control mode change
       if (dispParam) setDisplayMenu(Measurement_Message);
+      if (n==1) setDisplayMenu(Measurement_Start);
       dispCnt=0;
      break;
    case 1:
@@ -1155,22 +1211,43 @@ void loop() {
    {
     tick=tick+samplePeriod;
     readSensors();
+    
+    
     allSet=((reqBPM==BPM) && (reqVolume==volume) && (reqCompression==compression));
-
     compressionScale=(compression>minCompression)?compression:defaultCompression;
-    byte b=1*(relPressure<-0.2*compressionScale)+2*(relPressure<-0.1*compressionScale)+4+  // Calculate the bargraph content from the pressure
-           8*(relPressure>0.1*compressionScale)+16*(relPressure>0.2*compressionScale)+
-           32*(relPressure>0.4*compressionScale)+64*(relPressure>0.8*compressionScale)+
-           128*(relPressure>compressionScale);
-    barGraph=b; 
-    if (relPressure>1.2*compressionScale)
+    volumeScale=(volume>minVolume)?volume:defaultVolume;   
+    if (CVmode)  // CV Mode - bargraph needs to show compression
+     {
+      bargraphDot=4;
+      byte b=1*(relPressure<-0.2*compressionScale)+2*(relPressure<-0.1*compressionScale)+4+  // Calculate the bargraph content from the pressure
+             8*(relPressure>0.1*compressionScale)+16*(relPressure>0.2*compressionScale)+
+             32*(relPressure>0.4*compressionScale)+64*(relPressure>0.8*compressionScale)+
+             128*(relPressure>compressionScale);
+      barGraph=b; 
+     } else
+     {        // CP Mode - bargraph needs to show volume 
+      if ((relPressure>compressionScale) && (breathPhase==1))  // Check for pressure
+       {
+        stepper.setAcceleration(motorMaxAcceleration);
+        stepper.moveTo(stepper.currentPosition ());  // overshoot, then return
+        if (stepper.currentPosition ()<(volume*motorVolumeRatio)*failVolumeRatio) beep(300); // Insufficient volume alarm
+       }
+      bargraphDot=1;
+      float vol=stepper.currentPosition()/motorVolumeRatio;
+      int c=int ((7*vol)/volumeScale+1); // Always make sure at least the leftmost position is active
+      barGraph=0;
+      while (c--) barGraph+=barGraph+1;
+      // There is no need for an overvolume alarm as we control the steps.
+     }
+
+    if (relPressure>1.1*compressionScale)
       {
        if (highPressureAlarmCnt<highPressureAlarmDetect)
         highPressureAlarmCnt++; 
 #ifdef Beeper        
        else 
         beep(300); 
-#endif        
+#endif
       }  
      else
       if (highPressureAlarmCnt) highPressureAlarmCnt--;
@@ -1200,8 +1277,7 @@ void loop() {
       }
 #endif     
    }
-
-   
+  if ((millis()>breathe+breathLength) && (stepper.currentPosition()>0)) breathe+=50; // wait for the previous cycle to finish (safety)
   if (millis()>breathe+breathLength)  // start of a cycle
      {
       if (!allSet) sweepValues(); // Manage the ramp up / ramp down of parameters
@@ -1213,6 +1289,7 @@ void loop() {
       breathOut=breathTime-breathIn;
       breathInSpeed=volume/breathIn;
       breathOutSpeed=volume/breathOut;
+      /*  DEBUG
       Serial.print(breathLength);
       tab();
       Serial.print(breathTime);
@@ -1226,11 +1303,12 @@ void loop() {
       Serial.print(breathInSpeed);
       tab();
       Serial.println(breathOutSpeed);
-      
+      */
       breathGraphCnt=10;              // blinks the LED at the start of a cycle   
       // Values are just a starting point
-      stepper.setMaxSpeed(int(breathInSpeed*4000));
-      stepper.setAcceleration(volume*2*BPM);
+      stepper.setMaxSpeed(int(breathInSpeed*motorSpeed));
+      stepper.setAcceleration(breathInSpeed*breathInSpeed*motorAcceleration);
+      breathPhase=0;
       if (active)
        {
 #ifdef disableMotorctrl
@@ -1244,20 +1322,22 @@ void loop() {
 #ifdef Beeper
         beep(2);
 #endif        
-        stepper.moveTo(volume*0.8);        
+        breathPhase=1;
+        stepper.moveTo(volume*motorVolumeRatio);        
        }
      }
     if (millis()>breathe+breathIn)  // second half of a cycle
      {
-      
-      stepper.setMaxSpeed(int(breathOutSpeed*4000));
+      breathPhase=2;
+      stepper.setMaxSpeed(int(breathOutSpeed*motorSpeed));
+      stepper.setAcceleration(breathOutSpeed*breathOutSpeed*motorAcceleration);
       stepper.moveTo(0);
      }
-    if (millis()>breathe+breathLength-syncDelay+20)  // Synchronization period
+    if ((syncDelay) && ((millis()>breathe+breathLength-syncDelay+20) || ((breathPhase==2) && (stepper.distanceToGo() == 0))))  // Synchronization period
      {
       if ((relPressure<-0.1*compressionScale) && (peakPressure<-0.1*compressionScale))
        {
-        breathe=millis()-breathLength;
+        breathe=millis()-breathLength; // Trigger a new cycle sooner.
         Serial.print(relPressure);
         tab();
         Serial.print(peakPressure);
