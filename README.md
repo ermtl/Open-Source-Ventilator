@@ -13,6 +13,8 @@ Short video presentation / demo :
 
 NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification) have been issued by the UK government. This controller strives to follow these guidelines.
 
+Thanks to [uxvrob](https://github.com/uxvrob) we now have a [complete schematic diagram](https://github.com/ermtl/Open-Source-Ventilator/blob/master/hardware/OpenSourceVentilator_Rev1.pdf) so that the controller can be tested.
+
 # Main components
 
 - The arduino Nano was chosen as a controller for it's ability to perform the realtime tasks with relatively low latency (step generation & data acquisition) and it's universal availability. More sophisticated controllers such as the Raspberry Pi usually have real time issues and unpredictable latency. Also, the Arduino ecosystem is very rich in well tested libraries.
