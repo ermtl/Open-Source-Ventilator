@@ -39,7 +39,16 @@
 
     0.14 This version include proper timing, speed and acceleration for the motor control.
          The pressure controlled and volume controlled modes are implemented.
-    
+
+    0.15 Minor version change.
+         This version allows the replacement of the buggy Wire.h arduino library  (can hang
+         the controller) with acorrect version known as jm_Wire
+         https://github.com/ermtl/Open-Source-Ventilator/blob/master/OpenSourceVentilator/README.md
+         'Wire.h' is still the default library to prevent compiler errors.
+         The processor's hardware watchdog can now be enabled (off by default, use with care, you
+         risk bricking your processor. 
+         Modularisation is getting better (work in progress)
+         
     
 
     This program is free software: you can redistribute it and/or modify
@@ -135,7 +144,7 @@
  *    
  */
 
-// #define CurrentSense     // uncomment to add motor current sensing with the Allegromicro ACS712 sensor
+//#define CurrentSense     // uncomment to add motor current sensing with the Allegromicro ACS712 sensor
                           // This is not enabled by default as first test show the sensor is not sensitive
                           // enough. Another sensor should probably be used.
 
@@ -160,8 +169,14 @@
 
 #define disableMotorctrl  // control moter activation / desactivation      
 
+// # define watchdog      // WARNING: Do not enable this setting  while debugging, you might brick 
+                          // your dev. board. If this happens, you'll need to flash not just the 
+                          // bootloader, but the whole program space.
+                          // The problem is worse in Nanos with a bootloader that does not clear
+                          // the watchdog settings. 
 
-//******************************   IMPIED DEFINITIONS  ********************************
+
+//******************************   IMPLIED DEFINITIONS  ********************************
 
 #ifdef BoschBMxSensor
 #ifndef I2C
@@ -169,25 +184,35 @@
 #endif
 #endif
 
-#ifdef TM1638Keyboard
+#ifdef  TM1638Keyboard
 #define TM1638
 #endif
 
-#ifdef TM1638Display
+#ifdef  TM1638Display
 #ifndef TM1638
 #define TM1638
 #endif
 #endif
 
-#ifdef TM1638bargraph
+#ifdef  TM1638bargraph
 #ifndef TM1638
 #define TM1638
 #endif
 #endif
 
-#ifdef ActiveBeeper
+#ifdef  ActiveBeeper
 #define Beeper
 #endif
+
+#ifdef  watchdog
+#define watchdogProtect          // This prevents the watchdog from being fired before watchdogDelay  
+                                 // To allow an new software to be uploaded     
+#define watchdogDelay      1000  // Maximum time before the watchdog times out and resets 
+#define watchdogStartDelay 8000  // Delay before the watchdog becomes active (used to have the time
+                                 // to reload the program if it hangs the controller. Only for development.
+#endif
+
+
 
 //********************************   CONNECTION PINS   ********************************
 
@@ -229,34 +254,53 @@
 
 //*******************************   REQUIRED LIBRARIES   *******************************
 
-#ifdef TM1638               // Keyboard / display / LED combo board
-#include <TM1638plus.h>     //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
+#ifdef TM1638                   // Keyboard / display / LED combo board
+#include <TM1638plus.h>         //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
 #endif                      
-
-#ifdef BoschBMxSensor       // Temperature / humidity / pressure
-#include <BME280I2C.h>      //  by Tyler Glenn - https://github.com/finitespace/BME280
-#endif                      
-
+       
 #ifdef I2C
-#include <Wire.h>           // I2C protocol
+//#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
+#ifdef jm_Wire
+#include <jm_Wire.h>                  // I2C protocol, contains a workaround for a longstanding issue with the Wire library
+                                      // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
+                                      // The library is optional during developpement (unless you encounter lockups)
+                                      // but must be used for any production software. To use it, you need to change
+                                      // the #include "Wire.h" line in all libraries that use the I2C bus.
+                                      // INFO:
+#else                                 //  https://github.com/ermtl/Open-Source-Ventilator/blob/master/OpenSourceVentilator/README.md 
+#include <Wire.h>               // I2C protocol
+#endif
 #endif
 
+// Add your sensor library routines here 
+
+#ifdef BoschBMxSensor           // Temperature / humidity / pressure
+#include <BME280I2C.h>          //  by Tyler Glenn - https://github.com/finitespace/BME280
+#define tempSensor              // contains a temperature sensor
+#define humiditySensor          // contains a humidity sensor
+#define pressureSensor          // contains a pressure sensor
+#endif               
+
 #ifdef currentSense
-#include <avr/sleep.h>      // Sleep management library
+#include <avr/sleep.h>          // Sleep management library
 #endif
 
 #ifdef E2PROM
-#include <EEPROM.h>         // read / write to the processor's internal EEPROM
+#include <EEPROM.h>             // read / write to the processor's internal EEPROM
 #endif
 
 #ifdef StepGen
-#include <AccelStepper.h>  // Stepper / servo library with step pulse / dir interface
-#endif                      //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
+#include <AccelStepper.h>       // Stepper / servo library with step pulse / dir interface
+#endif                          //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
 
+#ifdef  watchdog
+#include <Adafruit_SleepyDog.h> // watchdog library by Adafruit   
+                                // https://github.com/adafruit/Adafruit_SleepyDog
+#endif
 
-#include "TimerOne.h"       // Timer component
-                            //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
-                            //  https://playground.arduino.cc/Code/Timer1/
+#include "TimerOne.h"           // Timer component
+                                //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
+                                //  https://playground.arduino.cc/Code/Timer1/
 
 
 //***************************************   END   ***************************************
@@ -298,6 +342,12 @@ BME280I2C bme;    // Default : forced mode, standby time = 1000 ms
 AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 #endif
 
+#ifdef jm_Wire
+extern uint16_t twi_readFrom_timeout; // Allows to add a longer timeout for I2C reads
+extern uint16_t twi_writeTo_timeout;  // Allows to add a longer timeout for I2C reads
+extern bool twi_readFrom_wait;        // Must be set to true to activate the timeouts
+extern bool twi_writeTo_wait;         // Must be set to true to activate the timeouts
+#endif
 
 #define SERIAL_BAUD 115200  // Serial port communication speed
 
@@ -321,8 +371,6 @@ AccelStepper stepper(AccelStepper::DRIVER, pin_Stepper_Step, pin_Stepper_DIR);
 
 #define samplePeriod 50  // 50 ms sensor sampling period
 #define highPressureAlarmDetect 10  // delay before an overpressure alarm is triggered (in samplePeriod increments)
-
-
 
 #define startup_message       0    // power up start
 #define error_message        10    // 10 + error code
@@ -357,6 +405,9 @@ boolean doDisp,                // indicates if a display update is required or n
         active,                // True if the machine is currently doing breathing cycles, false otherwise
         motorState,            // True if the motor is activated, false otherwise, false otherwise
         CVmode,                // CV or CP mode indicator; 
+#ifdef  watchdogProtect        
+        watchdogStarted,       // True when the watchdog has been activated. the first few seconds after reset are without watchdog protection
+#endif        
         debug;                 // True if a debugging mode is used, false otherwise
 char    disp[dispBufferLength];// Display data buffer
 float   ambientPressure,       // Calculated ambiant air pressure (averaged)
@@ -409,9 +460,9 @@ float   idleCurrent,           // Averaged value of the ADC when the motor is id
 #endif
  
 
-void (* resetFunction) (void) = 0;  // Self reset (to be used with watchdog)
+void (* resetFunction)(void) = 0;  // Self reset (to be used with watchdog)
 
-void tab ()
+void  __attribute__ ((noinline)) tab ()
 {
  if (term) Serial.print('\t');
 }
@@ -470,6 +521,7 @@ void setDisplayMenu(int ph, int dly=std_dly, int param=0)
 void displayBargraph (uint16_t value)
 {
 #ifdef TM1638bargraph
+  
   for (uint8_t position = 0; position < 8; position++)
    {
     tm.setLED(position, value & 1);
@@ -527,6 +579,13 @@ void beep(int lng)  // Launch a beep sound
  beepCnt=max(beepCnt,lng);              //  if overlapping sounds, use the longest of them 
 }
 #endif
+
+
+typedef struct {
+   float reqBPM,reqVolume,reqCompression,syncRatio,expirationRatio;
+   boolean cvMode,active;
+   int ambientPressure;
+} EEPROM_Data;
 
 #ifdef E2PROM
 void eeput (int n)  // records to EEPROM (only if values are validated)
@@ -616,23 +675,23 @@ String Buffer = "*******************************";  // filler
 
 void prstat()
 {
- Serial.print(F("\nPatient assisted breathing\tO"));
+ Serial.print  (F("\nPatient assisted breathing\tO"));
  Serial.println((active)?F("N"):F("ff"));
- Serial.println((CVmode)?F("CV mode"):F("CP mode"));
- Serial.print(F("Ventilation speed\t\t"));
- Serial.print(reqBPM);
- Serial.println(F(" cycles / minute"));
- Serial.print(F("Ventilation volume\t\t"));
- Serial.print(reqVolume/1000);
- Serial.println(F(" liter"));
- Serial.print(F("Ventilation pressure\t\t"));
- Serial.print(reqCompression/1000);
- Serial.println(F(" KPa"));
- Serial.print(F("Patient synchonization\t\t"));
- Serial.print(int(syncRatio*100.1));
- Serial.print(F(" % of cycle\n"));
- Serial.print(F("Expiration ratio\t\t"));
- Serial.print(expirationRatio);
+ Serial.print  ((CVmode)?F("CV"):F("CP"));
+ Serial.print  (F(" mode\nVentilation speed\t\t"));
+ Serial.print  (reqBPM);
+ Serial.print  (F(" cycles / minute\n"
+                  "Ventilation volume\t\t"));
+ Serial.print  (reqVolume/1000);
+ Serial.print  (F(" liter\n"
+                  "Ventilation pressure\t\t"));
+ Serial.print  (reqCompression/1000);
+ Serial.print  (F(" KPa\n"
+                  "Patient synchonization\t\t"));
+ Serial.print  (int(syncRatio*100.1));
+ Serial.print  (F(" % of cycle\n"
+                "Expiration ratio\t\t"));
+ Serial.print  (expirationRatio);
  Serial.println(F(" x inspiration\n"));
 }
 
@@ -641,7 +700,10 @@ void SerialCommand()
   commTime=millis(); 
   float r;
   char ch=Buffer[1];
-  switch ( Buffer[0])
+  char c=Buffer[0];
+  Buffer[0]=32;
+  r=Buffer.toFloat();
+  switch ( c)
    {
     case '1': // 1 Start assisted breathing
      Serial.println(F("Breathing started"));
@@ -658,32 +720,25 @@ void SerialCommand()
      setDisplayMenu(Stop_message,std_dly,0);
     break;
     case 'S': // S set Speed (in BPM)
-     Buffer[0]=32;
-     r=Buffer.toFloat();
      if ((r>=minBPM) && (r<=maxBPM))
       {reqBPM=r; prstat();} else Serial.println(F("Out of range (6-40BPM)"));  
     break;
     case 'V': // V set Volume (in liters)
-     Buffer[0]=32;
-     r=Buffer.toFloat()*1000;
+     r=r*1000;
      if ((r>=minVolume) && (r<=maxVolume))
       {reqVolume=r; prstat();} else Serial.println(F("Out of range (0.1-1.5l)"));  
     break;
     case 'P': // P Set pressure (in KPa)
-     Buffer[0]=32;
-     r=Buffer.toFloat()*1000;
+     r=r*1000;
      if ((r>=minCompression) && (r<=maxCompression))
       {reqCompression=r; prstat();} else Serial.println(F("Out of range (1-20KPa)"));  
     break;
     case 'E': // E set expiration ratio (x inspiration)
-     Buffer[0]=32;
-     r=Buffer.toFloat();
      if ((r>=minExpirationRatio) && (r<=maxExpirationRatio))
       {expirationRatio=r; prstat();} else Serial.println(F("Out of range (1 to 3 x inspiration)"));  
     break;
     case 'Y': // Y set sYnc (in % of cycle)
-     Buffer[0]=32;
-     r=Buffer.toFloat()/100;
+     r=r/100;
      if ((r>=minSyncRatio) && (r<=maxSyncRatio))
       {syncRatio=r; prstat();} else Serial.println(F("Out of range (0-40%)"));  
     break;
@@ -708,28 +763,31 @@ void SerialCommand()
      if (term)
       {
        prstat();  
-       Serial.println(F("1 Start assisted breathing")); 
-       Serial.println(F("CV sets Constant Volume mode")); 
-       Serial.println(F("CP sets Constant Pressure mode")); 
-       Serial.println(F("0 Stop assisted breathing")); 
-       Serial.println(F("S set Speed (in BPM)")); 
-       Serial.println(F("V set Volume (in liters)")); 
-       Serial.println(F("P set Pressure (in KPa)")); 
-       Serial.println(F("E set expiration ratio (x inspiration)")); 
-       Serial.println(F("Y set sYnc (in % of cycle)")); 
-       Serial.println(F("M show Measurements from the sensor")); 
+       Serial.println(F("1 Start assisted breathing\n"
+                        "CV sets Constant Volume mode\n"
+                        "CP sets Constant Pressure mode\n"
+                        "0 Stop assisted breathing\n"
+                        "S set Speed (in BPM)\n"
+                        "V set Volume (in liters)\n"
+                        "P set Pressure (in KPa)\n"
+                        "E set expiration ratio (x inspiration)\n"
+                        "Y set sYnc (in % of cycle)\n"
+                        "M show Measurements from the sensor\n"
 #ifdef E2PROM
-       Serial.println(F("W Write parameters to permanent memory")); 
+                        "W Write parameters to permanent memory\n"
 #endif       
-       Serial.println(F("D debug (on / off)")); 
-       Serial.println(F("R Reset")); 
-       Serial.println(F("? print this")); 
+                        "D debug (on / off)\n"
+                        "R Reset\n"
+                        "? print this\n" )); 
       }
       break;
     default:   // Unknown command 
      Serial.println(F("Unknown command. type '?' for instructions.")); 
     break;
-   }      
+   } 
+#ifdef watchdog
+ Watchdog.reset();
+#endif        
 }
 
 void SerialWait(int t)
@@ -797,7 +855,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 5:
-     strcpy(disp,"SOFT 0.14");
+     strcpy(disp,"SOFT 0.15");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -936,9 +994,18 @@ void Timer()
 #ifdef Led
    digitalWrite(pin_LED, LOW);
 #endif
+#ifdef watchdog
+   Watchdog.reset();
+#endif        
    cli();  // no interrupts
    timerLvl--; 
   }
+}
+
+
+void __attribute__ ((noinline)) IIRFilter (float raw,float &flt,float pct)
+{
+ flt=(flt==0)?raw:flt*(1-pct)+raw*pct;
 }
 
 
@@ -946,46 +1013,67 @@ void readSensors() // Works no matter if sensor is present or not (returns defau
 
 {
  float temp(NAN), hum(NAN), pres(NAN);
+
+// Add your sensor reading routines here 
+
+#ifdef BoschBMxSensor 
  BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
  BME280::PresUnit presUnit(BME280::PresUnit_Pa);
  bme.read(pres, temp, hum, tempUnit, presUnit);
- if (sensPressure)
-  {
-    pressure=pres;
-    if (stepper.currentPosition()==0)  // approximate athmospheric pressure by averaging when the bag is filled
-     ambientPressure=(ambientPressure==0)?pressure:ambientPressure*(1-ambientPressureFilter)+pres*ambientPressureFilter; // low pass filtering
-    avgPressure=(avgPressure==0)?pressure:avgPressure*(1-avgPressureFilter)+pres*avgPressureFilter;                      // low pass filtering
-    peakPressure=pressure-avgPressure;
-  }
-  else
-  {
-   pressure=defaultPressure;
-   ambientPressure=defaultAmbientPressure;
-  }
- if (sensHumidity)
-  {
-   humidity=hum;
-  }
-  else humidity=defaultHumidity;
+#endif
+
+#ifdef tempSensor
  if (sensTemperature)
   {
    temperature=temp;
   }
-  else temperature=defaultTemperature;
+  else 
+#else 
+   temperature=defaultTemperature;
+#endif
+#ifdef humiditySensor
+ if (sensHumidity)
+  {
+   humidity=hum;
+  }
+  else
+#else
+   humidity=defaultHumidity;
+#endif
+#ifdef pressureSensor
+ if (sensPressure)
+  {
+    pressure=pres;
+    if (stepper.currentPosition()==0)  // approximate athmospheric pressure by averaging when the bag is filled
+     IIRFilter(pressure,ambientPressure,ambientPressureFilter);
+     //ambientPressure=(ambientPressure==0)?pressure:ambientPressure*(1-ambientPressureFilter)+pres*ambientPressureFilter; // low pass filtering
+    IIRFilter(pressure,avgPressure,avgPressureFilter);
+    //avgPressure=(avgPressure==0)?pressure:avgPressure*(1-avgPressureFilter)+pres*avgPressureFilter;                      // low pass filtering
+    peakPressure=pressure-avgPressure;
+  }
+  else
+#else
+  {
+   pressure=defaultPressure;
+   ambientPressure=defaultAmbientPressure;
+  }
+#endif
  relPressure=pressure-ambientPressure; 
 
 #ifdef CurrentSense
  if (sensCurrent)
   {
-   set_sleep_mode(SLEEP_MODE_IDLE);
-   sleep_enable();
-   sleep_mode(); 
-   sleep_disable();
+   //set_sleep_mode(SLEEP_MODE_IDLE);
+   //sleep_enable();
+   //sleep_mode(); 
+   //sleep_disable();
    int c=analogRead(pin_current_Sense);
    if (stepper.speed()==0) // average of idle current value when the motor does not run
-    idleCurrent=(idleCurrent==0)?c:idleCurrent*(1-idleCurrentFilter)+c*idleCurrentFilter; // low pass filtering
+    // idleCurrent=(idleCurrent==0)?c:idleCurrent*(1-idleCurrentFilter)+c*idleCurrentFilter; // low pass filtering
+     IIRFilter(c,idleCurrent,idleCurrentFilter);
    currentVal=c-int(idleCurrent); 
-   currentRaw=(currentRaw==0)?analogCurrentRatio*currentVal:currentRaw*(1-currentFilter)+analogCurrentRatio*currentVal*currentFilter; // low pass filtering
+    //currentRaw=(currentRaw==0)?analogCurrentRatio*currentVal:currentRaw*(1-currentFilter)+analogCurrentRatio*currentVal*currentFilter; // low pass filtering
+   IIRFilter(analogCurrentRatio*currentVal,currentRaw,currentFilter);
    current=abs(currentRaw);
   }
   else current=0;
@@ -997,11 +1085,19 @@ void readSensors() // Works no matter if sensor is present or not (returns defau
   }
 }
 
-void detectBMEsensor()  // Detects the pressure sensor correct type or the absence of a functional pressure sensor
+
+void detectSensors()  // Detects the various sensors - initialisation for new sensors should be added here
 {
  sensHumidity=false;
  sensTemperature=false;
  sensPressure=false;
+#ifdef CurrentSense
+ sensCurrent=false;
+#endif
+
+// Add your sensor detection routines here
+ 
+#ifdef BoschBMxSensor
  if(bme.begin())
   {
    switch(bme.chipModel())
@@ -1027,11 +1123,8 @@ void detectBMEsensor()  // Detects the pressure sensor correct type or the absen
    setDisplayMenu(error_message,std_dly,0);
    if (term) Serial.println(F("Could not find BME280 sensor"));
   }
-}
-
+#endif  
 #ifdef CurrentSense
-void detectCurrentSensor()     // detects if a Allegromicro current sensor is connected to pin_current_Sense or not.
-{
  pinMode(pin_current_Sense,INPUT_PULLUP);
  delay (10);
  sensCurrent=(analogRead(pin_current_Sense)<750); // If the pin is left floating, it's voltage should be well above midpoint
@@ -1041,15 +1134,22 @@ void detectCurrentSensor()     // detects if a Allegromicro current sensor is co
    sensCurrent=(currentVal < currentMaxIdle);
   }
  if (sensCurrent)  Serial.println(F("Found current sensor!"));
-}
 #endif
-
+}
 
 void setup() {
  // put your setup code here, to run once:
  timerLvl=0;
  Timer1.initialize(200);  
  Timer1.attachInterrupt(Timer);
+#ifdef watchdog
+#ifndef  watchdogProtect        
+ Watchdog.enable(watchdogDelay);  // if the watchdog is enabled without delayed start, let it go
+                                  // (See the warning about bricking your board before enabling this)
+ Watchdog.reset();
+#endif        
+#endif        
+ 
  setDisplayMenu(startup_message); 
  
  pinMode(pin_Stepper_DIR, OUTPUT);
@@ -1065,15 +1165,19 @@ void setup() {
  beep(20); 
 #endif 
  Serial.begin(SERIAL_BAUD);
- int c=1000;
- while (!Serial && c--) delay(1); // wait for serial port to connect. Needed for native USB (non blocking)
+ while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
+ //int c=1000;
+ //while (!Serial && c--) delay(1); // wait for serial port to connect. Needed for native USB (non blocking)
  term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator Ver 0.14"));
+ if (term) Serial.println(F("Open Source Ventilator Ver 0.15"));
+#ifdef I2C
  Wire.begin();
- detectBMEsensor();
-#ifdef CurrentSense
- detectCurrentSensor()
 #endif
+#ifdef jm_Wire
+// jm_Wire.twi_readFrom_wait = true; // twi_readFrom() waiting loop
+// jm_Wire.twi_writeTo_wait = true;  // twi_writeTo() waiting loop
+#endif 
+ detectSensors();
  eeget ();    // read startup parameters (either from EEPROM or default value)
 #ifdef USBcontrol 
  Buffer="?";  // send informations to the serial port
@@ -1212,8 +1316,6 @@ void loop() {
    {
     tick=tick+samplePeriod;
     readSensors();
-    
-    
     allSet=((reqBPM==BPM) && (reqVolume==volume) && (reqCompression==compression));
     compressionScale=(compression>minCompression)?compression:defaultCompression;
     volumeScale=(volume>minVolume)?volume:defaultVolume;   
@@ -1347,7 +1449,19 @@ void loop() {
         Serial.println(F(" Sync"));
        }
      }
+#ifdef watchdog
+#ifdef  watchdogProtect        
+ if (!watchdogStarted && (millis()>watchdogStartDelay))       // True when the watchdog has been activated. the first few seconds after reset are without watchdog protection
+  {
+   Watchdog.enable(watchdogDelay);
+   watchdogStarted=true; 
+  }
+#endif        
+ Watchdog.reset();
+#endif        
 #ifdef USBcontrol     
- SerialWait(10); // wait for 100 usec
+ SerialWait(10);          // wait for 100 usec looking for received characters
+#else
+  elayMicroseconds(100);  // wait for 100 usec
 #endif 
 }
