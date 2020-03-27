@@ -1,4 +1,5 @@
-# Important Note about I2C sensors and peripherals using the arduino Wire.h library
+# Important Note 
+about I2C sensors and peripherals using the arduino Wire.h library
 
 If you compile with any I2C sensor or peripheral that uses the standard Arduino "Wire.h" library, you must be aware that this library is flawed and does contain an infinite loop that will hang the Arduino if an I2C peripheral fails to respond. The only way to exit is to reset it either manually, or using a watchdog. That's been documented since 2011 but Arduino refuses to accept the pull that would correct the situation.
 
