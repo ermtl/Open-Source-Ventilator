@@ -83,6 +83,14 @@ When changing the settings, the change will be gradual with each subsequent brea
 - data acquisition.
 Data is acquired from the BME/BMP280 sensor every 100ms. the acquisition includes filtering of the pressure 
 
+# Schematic 
+
+<object data="OpenSourceVentilator/OpenSourceVentilator_sch.pdf" type="application/pdf" width="50%" height="50%">
+<embed src="OpenSourceVentilator/OpenSourceVentilator_sch.pdf">
+<p>This browser does not support PDFs. Please download the PDF to view it: <a href="OpenSourceVentilator/OpenSourceVentilator_sch.pdf">"Download Schematic</a></p> 
+</embed>
+</object>
+
 # Required hardware
 
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/arduinoNanoTerminals.jpg" 
