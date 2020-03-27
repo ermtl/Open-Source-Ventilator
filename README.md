@@ -171,4 +171,13 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
 
   - 0.14 This version include proper timing, speed and acceleration for the motor control.
          The pressure controlled and volume controlled modes are implemented.
+         
+  - 0.15 Minor version change.
+         This version allows the replacement of the buggy Wire.h arduino library  (can hang
+         the controller) with a correct version known as jm_Wire
+         https://github.com/ermtl/Open-Source-Ventilator/blob/master/OpenSourceVentilator/README.md
+         'Wire.h' is still the default library to prevent compiler errors.
+         The processor's hardware watchdog can now be enabled (off by default, use with care, you
+         risk bricking your processor. 
+         Modularisation is getting better (work in progress)         
     
