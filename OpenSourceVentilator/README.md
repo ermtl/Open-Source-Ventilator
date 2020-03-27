@@ -38,7 +38,9 @@ You will sometimes need to exit Arduino and restart it for the change to be effe
 here is a list of the libraries used by OpenSourceVentilator and the files that need to be modified:
 
  - "BME280I2C.h"
+ 
    File /libraries/BME280/src/BME280.cpp
+ 
    File /libraries/BME280/src/BME280I2C.cpp
 
 As I become aware of other libraries used, they will be added to this list.
