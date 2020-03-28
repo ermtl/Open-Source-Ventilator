@@ -18,7 +18,7 @@ Since reliability is paramount in OpenSourceVentilator, the default "Wire.h" lib
 
 However, all libraries that use "Wire.h" will reference it by name in their code, thus a function with the same name will appear to be defined twice, so the compiler will complain loudly and fail.
 
-The solution is to replace the following line in all the librarie files that contain it.
+The solution is to replace the following line in all the library files that contains it.
 
 ```
   #include <Wire.h> 
