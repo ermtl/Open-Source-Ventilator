@@ -43,4 +43,8 @@ here is a list of the libraries used by OpenSourceVentilator and the files that 
  
    File /libraries/BME280/src/BME280I2C.cpp
 
+ - "BMP180MI"
+ 
+   File /libraries/BMP180MI/src/BMP180TwoWire.h
+
 As I become aware of other libraries used, they will be added to this list.
