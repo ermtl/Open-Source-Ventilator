@@ -28,7 +28,7 @@ with this little preprocessor code
   #if __has_include("jm_Wire.h")
   #include <jm_Wire.h>
   #else
-  #include "Wire.h"
+  #include <Wire.h>
   #endif
 ```
 
