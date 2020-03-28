@@ -180,4 +180,33 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          The processor's hardware watchdog can now be enabled (off by default, use with care, you
          risk bricking your processor. 
          Modularisation is getting better (work in progress)         
-    
+   
+  - 0.16 Double pressure sensor, breath phases modularization
+         This version can use 2 absolute sensors (or still use just 1, configurable) to
+         constantly monitor the ambiant air pressure. This is important for patients that 
+         are heliported and for patients placed in a negative pressure room, 2 situations
+         where the ambiant pressure can change rapidly.
+         The 2 sensors together will behave as a differential pressure sensor.
+         Since pressure is a critical data, several safeguards and coping strategies have 
+         been added to make sure data from the sensor is acurate and there is a failsafe.
+         Things such as randomly connecting/disconnecting sensors are non blocking and behave 
+         as expected.
+         this feature requires the #define jm_Wire to be uncommented.Please see the link in
+         the description for version 0.15 above
+
+         Also, as requested, the various phases and functions managing the breathing cycle 
+         itself have been modularized to allow third parties to implement more sophisticated
+         control strategies.
+
+         Finally, the processor's program memory is filing up quickly as the control becomes 
+         more complex. There is still opportunities for important optimizations, but the base 
+         version will have to give up some non essential functions to fit in a regular Arduino
+         Nano (such as the verbose serial interface or the ability to manage both the native
+         keyboard / display and the USB serial command line interface.
+
+         This version barely fits with the USB commands on, so they've been deactivated.
+         You can get them back by uncommenting the #define USBcontrol line.
+
+         The following versions will both target the Nano and the Mega with Atmega2560 processor
+         for 8 times the available program memory.
+ 
