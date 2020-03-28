@@ -1,5 +1,5 @@
 # Important Note 
-about I2C sensors and peripherals using the arduino Wire.h library
+about I2C sensors and peripherals using the Arduino Wire.h library
 
 If you compile with any I2C sensor or peripheral that uses the standard Arduino "Wire.h" library, you must be aware that this library is flawed and does contain an infinite loop that will hang the Arduino if an I2C peripheral fails to respond. The only way to exit is to reset it either manually, or using a watchdog. That's been documented since 2011 but Arduino refuses to accept the pull that would correct the situation.
 
@@ -37,14 +37,19 @@ You will sometimes need to exit Arduino and restart it for the change to be effe
 
 here is a list of the libraries used by OpenSourceVentilator and the files that need to be modified:
 
- - "BME280I2C.h"
+ - "BME280I2C.h" (pressure / temperature / humidity sensor)
  
    File /libraries/BME280/src/BME280.cpp
  
    File /libraries/BME280/src/BME280I2C.cpp
 
- - "BMP180MI"
+ - "BMP180MI" (pressure sensor)
  
    File /libraries/BMP180MI/src/BMP180TwoWire.h
+   
+ - "LiquidCrystal_PCF8574"  (2x16 characters LCD with a PCF8574 "backpack")
+ 
+   File /libraries/LiquidCrystal_PCF8574/src/LiquidCrystal_PCF8574.cpp
+ 
 
 As I become aware of other libraries used in the project, they will be added to this list.
