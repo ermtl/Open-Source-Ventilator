@@ -3,10 +3,10 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 2 2
+Sheet 2 3
 Title "OpenSourceVentilator Controller"
-Date "Mar. 26 2020"
-Rev "1"
+Date "Mar. 28 2020"
+Rev "2"
 Comp "https://github.com/ermtl/Open-Source-Ventilator"
 Comment1 "Drafting: Robbie Sharma"
 Comment2 "Designer: Eric Vinter"
