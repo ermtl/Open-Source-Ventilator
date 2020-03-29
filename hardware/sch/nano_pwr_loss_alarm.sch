@@ -3,12 +3,12 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 3 3
+Sheet 3 4
 Title "OpenSourceVentilator Controller"
 Date "Mar. 28 2020"
-Rev "1"
+Rev "1b"
 Comp "https://github.com/ermtl/Open-Source-Ventilator"
-Comment1 "Robbie Sharma"
+Comment1 "Drafting: Robbie Sharma"
 Comment2 ""
 Comment3 ""
 Comment4 ""
@@ -88,23 +88,23 @@ $EndComp
 $Comp
 L Device:R_Small_US R305
 U 1 1 5E877E6F
-P 8575 2675
-F 0 "R305" H 8643 2721 50  0000 L CNN
-F 1 "220" H 8643 2630 50  0000 L CNN
-F 2 "" H 8575 2675 50  0001 C CNN
-F 3 "~" H 8575 2675 50  0001 C CNN
-	1    8575 2675
+P 8475 2675
+F 0 "R305" H 8543 2721 50  0000 L CNN
+F 1 "220" H 8543 2630 50  0000 L CNN
+F 2 "" H 8475 2675 50  0001 C CNN
+F 3 "~" H 8475 2675 50  0001 C CNN
+	1    8475 2675
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:LED D302
 U 1 1 5E8784E9
-P 8575 3175
-F 0 "D302" V 8614 3058 50  0000 R CNN
-F 1 "LED" V 8523 3058 50  0000 R CNN
-F 2 "" H 8575 3175 50  0001 C CNN
-F 3 "~" H 8575 3175 50  0001 C CNN
-	1    8575 3175
+P 8475 3175
+F 0 "D302" V 8514 3058 50  0000 R CNN
+F 1 "LED" V 8423 3058 50  0000 R CNN
+F 2 "" H 8475 3175 50  0001 C CNN
+F 3 "~" H 8475 3175 50  0001 C CNN
+	1    8475 3175
 	0    -1   -1   0   
 $EndComp
 $Comp
@@ -129,23 +129,12 @@ F 3 "~" H 4975 2975 50  0001 C CNN
 	1    4975 2975
 	-1   0    0    1   
 $EndComp
-$Comp
-L Relay:RT314A12 K301
-U 1 1 5E87C70E
-P 8275 4225
-F 0 "K301" H 8705 4271 50  0000 L CNN
-F 1 "RT314A12" H 8705 4180 50  0000 L CNN
-F 2 "Relay_THT:Relay_SPDT_Schrack-RT1-16A-FormC_RM5mm" H 9825 4175 50  0001 C CNN
-F 3 "https://www.te.com/commerce/DocumentDelivery/DDEController?Action=srchrtrv&DocNm=RT1_bistable&DocType=DS&DocLang=English" H 8275 4225 50  0001 C CNN
-	1    8275 4225
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	5875 2725 5875 3075
 Wire Wire Line
 	5875 3075 6075 3075
 Wire Wire Line
-	8575 2775 8575 3025
+	8475 2775 8475 3025
 Wire Wire Line
 	6525 2825 6525 3075
 Wire Wire Line
@@ -208,20 +197,18 @@ ALARM+
 Text HLabel 8875 4625 2    50   Output ~ 0
 ALARM-
 Wire Wire Line
-	8575 2125 8575 2575
+	8475 2125 8475 2575
 Wire Wire Line
-	8475 4525 8475 4625
-Wire Wire Line
-	8475 4625 8675 4625
+	8575 4525 8575 4625
 $Comp
 L power:GND #PWR0302
 U 1 1 5E8867CF
-P 8675 4825
-F 0 "#PWR0302" H 8675 4575 50  0001 C CNN
-F 1 "GND" H 8680 4652 50  0000 C CNN
-F 2 "" H 8675 4825 50  0001 C CNN
-F 3 "" H 8675 4825 50  0001 C CNN
-	1    8675 4825
+P 8575 4825
+F 0 "#PWR0302" H 8575 4575 50  0001 C CNN
+F 1 "GND" H 8580 4652 50  0000 C CNN
+F 2 "" H 8575 4825 50  0001 C CNN
+F 3 "" H 8575 4825 50  0001 C CNN
+	1    8575 4825
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -235,13 +222,11 @@ Connection ~ 7475 4625
 Wire Wire Line
 	7475 4625 8075 4625
 Wire Wire Line
-	8675 4625 8675 4825
-Connection ~ 8675 4625
+	8575 4625 8575 4825
+Connection ~ 8575 4625
 Wire Wire Line
-	8675 4625 8875 4625
+	8575 4625 8875 4625
 Connection ~ 5425 4625
-Wire Wire Line
-	3050 2125 3825 2125
 $Comp
 L Transistor_BJT:BC547 Q303
 U 1 1 5E889D3C
@@ -254,42 +239,15 @@ F 3 "http://www.fairchildsemi.com/ds/BC/BC547.pdf" H 4025 3850 50  0001 L CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6525 2125 7175 2125
+	8475 3325 8475 3625
 Wire Wire Line
-	8575 3325 8575 3625
+	8875 3625 8475 3625
+Connection ~ 8475 3625
 Wire Wire Line
-	8875 3625 8575 3625
-Connection ~ 8575 3625
-Wire Wire Line
-	8575 3625 8575 3925
-Wire Wire Line
-	7175 2125 8575 2125
-Connection ~ 3825 2125
+	8475 3625 8475 3925
 Connection ~ 5875 2125
 Wire Wire Line
-	3825 2775 4125 2775
-Connection ~ 4125 2775
-Wire Wire Line
-	4275 2475 4475 2475
-Wire Wire Line
-	4125 2775 4675 2775
-Wire Wire Line
-	4875 2475 4975 2475
-Wire Wire Line
-	4975 2475 4975 2875
-Wire Wire Line
 	4975 3075 4975 3425
-$Comp
-L Transistor_FET:SiA453EDJ Q304
-U 1 1 5E8BB916
-P 4675 2575
-F 0 "Q304" V 5017 2575 50  0000 C CNN
-F 1 "SiA453EDJ" V 4926 2575 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:Vishay_PowerPAK_SC70-6L_Single" H 4875 2500 50  0001 L CIN
-F 3 "http://www.vishay.com/docs/62864/sia453edj.pdf" V 4675 2575 50  0001 L CNN
-	1    4675 2575
-	0    1    -1   0   
-$EndComp
 $Comp
 L Device:R_Small_US R306
 U 1 1 5E920447
@@ -302,38 +260,72 @@ F 3 "~" H 3400 3850 50  0001 C CNN
 	0    -1   1    0   
 $EndComp
 Wire Wire Line
-	3825 2125 3825 2775
-Wire Wire Line
 	3500 3850 3825 3850
 Wire Wire Line
 	3050 3850 3300 3850
-Wire Wire Line
-	3825 2125 4275 2125
 $Comp
 L Device:R_Small_US R307
 U 1 1 5E926BC7
-P 4275 2325
-F 0 "R307" H 4208 2279 50  0000 R CNN
-F 1 "100K" H 4208 2370 50  0000 R CNN
-F 2 "" H 4275 2325 50  0001 C CNN
-F 3 "~" H 4275 2325 50  0001 C CNN
-	1    4275 2325
+P 4125 2325
+F 0 "R307" H 4058 2279 50  0000 R CNN
+F 1 "10K" H 4058 2370 50  0000 R CNN
+F 2 "" H 4125 2325 50  0001 C CNN
+F 3 "~" H 4125 2325 50  0001 C CNN
+	1    4125 2325
 	1    0    0    1   
 $EndComp
 Wire Wire Line
-	4275 2125 4275 2225
-Connection ~ 4275 2125
-Wire Wire Line
-	4275 2125 5875 2125
-Wire Wire Line
-	4275 2425 4275 2475
-Wire Wire Line
 	3075 4625 4125 4625
-Wire Wire Line
-	4125 2775 4125 3650
 Wire Wire Line
 	4125 4050 4125 4625
 Connection ~ 4125 4625
 Wire Wire Line
 	4125 4625 5425 4625
+Wire Wire Line
+	4675 2525 4125 2525
+$Comp
+L Transistor_FET:SiA453EDJ Q304
+U 1 1 5E8BB916
+P 4875 2525
+F 0 "Q304" H 5250 2525 50  0000 C CNN
+F 1 "SiA453EDJ" H 5250 2425 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:Vishay_PowerPAK_SC70-6L_Single" H 5075 2450 50  0001 L CIN
+F 3 "http://www.vishay.com/docs/62864/sia453edj.pdf" V 4875 2525 50  0001 L CNN
+	1    4875 2525
+	1    0    0    1   
+$EndComp
+Wire Wire Line
+	4975 2725 4975 2875
+Wire Wire Line
+	4975 2125 4975 2325
+Connection ~ 4975 2125
+Wire Wire Line
+	4975 2125 5875 2125
+Wire Wire Line
+	3050 2125 4125 2125
+Wire Wire Line
+	4125 2125 4125 2225
+Connection ~ 4125 2125
+Wire Wire Line
+	4125 2125 4975 2125
+Wire Wire Line
+	4125 2425 4125 2525
+Connection ~ 4125 2525
+Wire Wire Line
+	4125 2525 4125 3650
+$Comp
+L Relay:G6EU K301
+U 1 1 5EA9DD6B
+P 8275 4225
+F 0 "K301" H 7846 4179 50  0000 R CNN
+F 1 "G6EU" H 7846 4270 50  0000 R CNN
+F 2 "Relay_THT:Relay_SPDT_Omron_G6E" H 9405 4195 50  0001 C CNN
+F 3 "https://www.omron.com/ecb/products/pdf/en-g6e.pdf" H 8275 4225 50  0001 C CNN
+	1    8275 4225
+	1    0    0    1   
+$EndComp
+Wire Wire Line
+	7175 2125 8475 2125
+Wire Wire Line
+	6525 2125 7175 2125
 $EndSCHEMATC
