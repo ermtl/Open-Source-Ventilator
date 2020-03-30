@@ -50,12 +50,12 @@
 
     0.16 Double pressure sensor, breath phases modularization
          This version can use 2 absolute sensors (or still use just 1, configurable) to
-         constantly monitor the ambiant air pressure. This is important for patients that 
+         constantly monitor the ambient air pressure. This is important for patients that 
          are heliported and for patients placed in a negative pressure room, 2 situations
-         where the ambiant pressure can change rapidly.
+         where the ambient pressure can change rapidly.
          The 2 sensors together will behave as a differential pressure sensor.
          Since pressure is a critical data, several safeguards and coping strategies have 
-         been added to make sure data from the sensor is acurate and there is a failsafe.
+         been added to make sure data from the sensor is accurate and there is a failsafe.
          Things such as randomly connecting/disconnecting sensors are non blocking and behave 
          as expected.
          this feature requires the #define jm_Wire to be uncommented.Please see the link in
@@ -77,6 +77,49 @@
          The following versions will both target the Nano and the Mega with Atmega2560 processor
          for 8 times the available program memory.
 
+    0.17 2x16 LCD Display - Telemetry
+         
+         The ability to use an alphanumeric 2 lines * 16 characters LCD display had been
+         requested, it will now be fully supported. Since this LCD uses lots of IO pins, 
+         the retained version is connected to a PCF8574 "Backpack" board to make it I2C 
+         compatible. The LCD+the backpack are sold online for around 2.50$.
+         The TM1638 display is still supported as a minimal option.
+         A good side effect is that the library is lean and so USB/serial terminal control
+         is back by default.
+         At this point, the keyboard and bargraph are still done with the TM1638, but a
+         simple button keyboard will be supported very soon.
+         Telemetry will send information in real time about the breathing cycle for further 
+         data analysis and / or graphical display !
+         This will be very very useful for people developing mechanical solutions, and 
+         doing data analysis to develop motor position <=> volume mapping
+         Data is sent in common CSV format, around 1 data point every 20 millisecond
+         The "T" command, sent through the serial port toggles telemetry on or off.
+
+         every data point includes :
+         - Time since the breathing was activated.
+         - Breathing cycle phase (more phases might be added in the future)
+           0 : Start of new cycle
+           1 : Inspiration
+           2 : Start of expiration
+           3 : Expiration
+           4 : Patient breathing initiation search
+           5 : Patient initiated a breathing cycle
+          - Motor position (in step) Travelled distance depends on driver microstepping
+                                     and driving mechanism.
+          - relative pressure in cm H2O
+          In addition to these data points, during phase 0 (start of cycle), the following 
+          cycle data is sent:
+          - Ambiant pressure (mBar)
+          - Breathing volume per cycle in ml
+          - Motor destination / target (steps)
+          - Breathing length (in seconds)
+          - Breathing in duration (in seconds)
+          - breathing in top speed (in steps/second)
+          - Motor acceleration during inspiration (in steps per second squared)
+          - Breathing out duration (in seconds)
+          - breathing out top speed (in steps/second)
+          - Motor acceleration during expiration (in steps per second squared)
+          
 
     GPL V3 Licence
     --------------
@@ -116,12 +159,12 @@
 */
 
 #define minBPM                     10.0   // minimum respiratory speed
-#define defaultBPM                 15.0   // default respiratory speed
+#define defaultBPM                 20.0   // default respiratory speed
 #define stepBPM                     1.0   // adjustment step for respiratory speed
 #define maxBPM                     35.0   // maximum respiratory speed
 #define maxBPMchange                0.2   // maximum respiratory speed change in proportion of final value per beat (1=100%)
 #define minVolume                 100.0   // minimum respiratory volume in milliliters 
-#define defaultVolume             200.0   // default respiratory volume in milliliters 
+#define defaultVolume             300.0   // default respiratory volume in milliliters 
 #define stepVolume                100.0   // adjustment step for respiratory volume in milliliters 
 #define maxVolume                 800.0   // maximum respiratory volume in milliliters 
 #define maxVolumeChange             0.25  // maximum respiratory volume change in proportion of final value per beat (1=100%) 
@@ -142,10 +185,10 @@
 
 
 
-#define ambientPressureFilter       0.002 // IIR filtering ratio (lower value produce longer time constant)
+#define ambientPressureFilter       0.02  // IIR filtering ratio (lower value produce longer time constant)
 #define avgPressureFilter           0.1   // IIR filtering ratio (lower value produce longer time constant)
-#define defaultPressure        105000.00  // Pressure in Pa returned when no sensor is found
-#define defaultAmbientPressure 105000.00  // assumed ambiant pressure in Pa returned when no sensor is found
+#define defaultPressure        101325.00  // Pressure in Pa returned when no sensor is found (1 atm)
+#define defaultAmbientPressure 101325.00  // assumed ambiant pressure in Pa returned when no sensor is found (1 atm)
 #define defaultHumidity            50.00  // humidity in % RH returned when no sensor is found
 #define defaultTemperature         20.00  // temperature in °C returned when no sensor is found
 #define alarmCompressionValue       1.1   // if the pressure exceeds the presed value * alarmCompressionValue, 
@@ -181,14 +224,16 @@
 #define arduinoNano        // defines the board as an Arduino nano with with Atmega328P processor
                            // You can define your own board and pinout.
 
-// #define USBcontrol         // USB / serial Command line interface.
+#define USBcontrol         // USB / serial Command line interface.
                            // This allows complete control of all parameters.
 
 #define E2PROM             // Uses the internal EEPROM for parameter storage
 
 #define TM1638Keyboard     // Use a TM1638 for the keyboard
 
-#define TM1638Display      // Use a TM1638 for the display
+//#define TM1638Display      // Use a TM1638 for the display
+
+#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
 
 #define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
 
@@ -198,7 +243,7 @@
 
 #define BoschBMxSensor     // Bosch Sensortech BMP280 or BME280
 
-#define BoschBMP180Sensor  // Bosch Sensortech BMP180 
+// #define BoschBMP180Sensor  // Bosch Sensortech BMP180 
 
 #define TwoPressureSensors // Double pressure sensor (one for barometric pressure)
 
@@ -216,7 +261,8 @@
                            // The problem is worse in Nanos with a bootloader that does not clear
                            // the watchdog settings. 
 
-
+#define serialTelemetry    // Sends real time data about time, current breathing phase, motor position, pressure 
+                           // while the machine works in CSV format
 
 //******************************   IMPLIED DEFINITIONS  ********************************
 
@@ -230,6 +276,14 @@
 #ifndef I2C
 #define I2C
 #endif
+#define dispMenus     // Alternate displays must also enable this
+#endif
+
+#ifdef PCF8574LCDDisplay
+#ifndef I2C
+#define I2C
+#endif
+#define dispMenus     // Alternate displays must also enable this
 #endif
 
 #ifdef  TM1638Keyboard
@@ -309,21 +363,27 @@
 
 //*******************************   REQUIRED LIBRARIES   *******************************
 
-#ifdef TM1638                   // Keyboard / display / LED combo board
-#include <TM1638plus.h>         //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
+#ifdef TM1638                      // Keyboard / display / LED combo board
+#include <TM1638plus.h>            //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
 #endif                      
+
+
+#ifdef PCF8574LCDDisplay           // LCD with PCF8574 "backpack"
+#include <LiquidCrystal_PCF8574.h> // Matthias Hertel - http://www.mathertel.de/Arduino/LiquidCrystal_PCF8574.aspx 
+#endif
+
        
 #ifdef I2C
-//#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
+#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
 #ifdef jm_Wire
-#include <jm_Wire.h>                  // I2C protocol, contains a workaround for a longstanding issue with the Wire library
-                                      // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
-                                      // The library is optional during developpement (unless you encounter lockups)
-                                      // but must be used for any production software. To use it, you need to change
-                                      // the #include "Wire.h" line in all libraries that use the I2C bus.
-                                      // INFO:
-#else                                 //  https://github.com/ermtl/Open-Source-Ventilator/blob/master/OpenSourceVentilator/README.md 
-#include <Wire.h>               // I2C protocol
+#include <jm_Wire.h>              // I2C protocol, contains a workaround for a longstanding issue with the Wire library
+                                  // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
+                                  // The library is optional during developpement (unless you encounter lockups)
+                                  // but must be used for any production software. To use it, you need to change
+                                  // the #include "Wire.h" line in all libraries that use the I2C bus.
+                                  // INFO:
+#else                             //  https://github.com/ermtl/Open-Source-Ventilator/blob/master/OpenSourceVentilator/README.md 
+#include <Wire.h>                 // I2C protocol (flawed library)
 #endif
 #endif
 
@@ -371,8 +431,8 @@
 // #define debug_0      // print data for each cycle
 // #define debug_1      // print data for user triggered cycle    
 // #define debug_2      // print data for 1 in 10 measurement cycles
-// #define debug_3        // print sensor datadata 
-// #define debug_4        // temperature / humidity / pressure 
+// #define debug_3      // print sensor datadata 
+// #define debug_4      // temperature / humidity / pressure 
 
 
 
@@ -389,11 +449,18 @@
 #endif
 
 #ifdef TM1638Display
-#define dispBufferLength 12
+//#define dispBufferLength 12
+#endif
+#ifdef PCF8574LCDDisplay
+#define dispBufferLength 40
 #endif
 
 #ifdef TM1638
 TM1638plus tm(pin_Strobe_TM, pin_Clock_TM , pin_DIO_TM);  //Constructor object
+#endif
+
+#ifdef PCF8574LCDDisplay
+LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 #endif
 
 
@@ -453,7 +520,7 @@ extern bool twi_writeTo_wait;         // Must be set to true to activate the tim
 
 //#define serialVerbose   // Should the messages sent to the serial port be verbose or not
 
-#define samplePeriod 50  // 50 ms sensor sampling period
+#define samplePeriod 20  // 20 ms sensor sampling period
 #define highPressureAlarmDetect 10  // delay before an overpressure alarm is triggered (in samplePeriod increments)
 #define delayAmbiantPressure 2500  // In dual pressure sensor mode, delay when the main ambiant pressure sensor fails
                                    // before we start hunting for ambiant pressure value on the second sensor  
@@ -490,12 +557,15 @@ boolean doDisp,                // indicates if a display update is required or n
         sensFlow,              // True if an airflow sensor is present, false otherwise (not used yet)
         allSet,                // True if all actual values match the programed values, false when ramping values up or down
         active,                // True if the machine is currently doing breathing cycles, false otherwise
+        Mactive,               // active memory (transition detection  
         motorState,            // True if the motor is activated, false otherwise, false otherwise
         CVmode,                // CV or CP mode indicator; 
 #ifdef  watchdogProtect        
         watchdogStarted,       // True when the watchdog has been activated. the first few seconds after reset are without watchdog protection
 #endif        
         BMP180Phase,           // Indicates if the expected value is a temperature or a pressure
+        I2CBusy,               // Tells whenever the sensors are used in the main lop so that the display can wait.
+        telemetry,             // true if the serial telemetry mode is active, false otherwise.
         debug;                 // True if a debugging mode is used, false otherwise
 char    disp[dispBufferLength];// Display data buffer
 float   ambientPressure,       // Calculated ambiant air pressure (averaged)
@@ -508,19 +578,22 @@ float   ambientPressure,       // Calculated ambiant air pressure (averaged)
         temperature2,          // temperature as read by the 2nd sensor, in Celsius (if available)
         humidity,              // humidity as read by the sensor, in % RH
         breathInSpeed,         // Speed of the breath inhalation in liter / second
-        breathOutSpeed;        // speed of the breath exhalation in liter / second
+        breathInAcceleration,  // Acceleration in step squared/second      
+        breathOutSpeed,        // speed of the breath exhalation in liter / second
+        breathOutAcceleration; // Acceleration in step squared/second      
 long    tick,                  // counter used to trigger sensor measurements
         breathe,               // counter used to track the current breathing cycle
         lastKey,               // last time when a key was pressed (used to automatically return to the main menu) 
         commTime,              // Last time a serial communication was received
         lastActive,            // Last time the motor was active
+        startActive,           // last time the motor was started
         lastAmbiantPressure,   // last time a valid ambiant pressure was collected
         breathLength,          // duration of the current breathing cycle in milliseconds. This is 60000/BPM.
         breathTime,            // Length of cycle minus the sync period
         breathIn,              // Length of the breath inhalation
         breathOut;             // Length of the breath exhalation
 float   BPM,                   // beats Per Minute. This is the minimum breathing rate, as defined by the user
-        volume,                // Breathing volume per cycle
+        volume,                // Breathing volume per cycle in ml
         compression,           // Max / target compression while inhaling
         compressionScale,      // Scale of the compression relative to set value
         volumeScale;           // Scale of the volume relative to set value
@@ -556,6 +629,11 @@ void (* resetFunction)(void) = 0;  // Self reset (to be used with watchdog)
 void  __attribute__ ((noinline)) tab ()
 {
  if (term) Serial.print('\t');
+}
+
+void  __attribute__ ((noinline)) sep ()
+{
+ if (term) Serial.print(',');
 }
 
 
@@ -657,6 +735,27 @@ void updateBargraph()
 
 void doDisplay()
 {
+#ifdef PCF8574LCDDisplay  
+ byte b=0;
+ int n=-1;
+ while (b<39) if (disp[b++]=='\n')
+  {
+   disp[b-1]=0;  
+   n=b;
+  }
+ disp[38]=0;   // Safety
+ if (n!=1)
+  {
+    lcd.clear();
+    lcd.setCursor(1, 0);
+    lcd.print(disp);
+  }
+ if (n>=0)
+  {
+   lcd.setCursor(1,1);
+   lcd.print(&disp[n]);  
+  }
+#endif
 #ifdef TM1638Display
  byte f=0;
  byte c=8;
@@ -708,11 +807,12 @@ void beep(int lng)  // Launch a beep sound
 #endif
 
 
-typedef struct {
+typedef struct
+  {
    float reqBPM,reqVolume,reqCompression,syncRatio,expirationRatio;
    boolean cvMode,active;
    int ambientPressure;
-} EEPROM_Data;
+  } EEPROM_Data;
 
 #ifdef E2PROM
 void eeput (int n)  // records to EEPROM (only if values are validated)
@@ -860,8 +960,8 @@ void SerialCommand()
 active=true;
     break;
     case 'C': // CV / CP mode
-     if (ch='V') CVmode=true; 
-     if (ch='P') CVmode=false; 
+     if (ch=='V') CVmode=true; 
+     if (ch=='P') CVmode=false; 
 #ifdef serialVerbose
      Serial.println((CVmode)?F("CV mode"):F("CP mode"));
 #endif
@@ -914,6 +1014,11 @@ active=true;
     case 'M': // M show Measurements from the sensor
      meas();  
     break;
+#ifdef serialTelemetry    
+    case 'T': // T toggle Telemetry data on/off\n
+     telemetry=!telemetry;  
+    break;
+#endif
 #ifdef EEPROM
     case 'W': // T Terminal mode (human readable)
      eeput(0);  // Save settings to EEPROM
@@ -930,37 +1035,47 @@ active=true;
     // cli();
     // resetFunction();
     //break;
-#ifdef serialVerbose
     case '?': // help
      if (term)
       {
-       prstat();  
-       Serial.println(F("1 Start assisted breathing\n"
+#ifdef serialVerbose
+       Serial.println(F("0 Stop assisted breathing\n"
+                        "1 Start assisted breathing\n"
                         "CV sets Constant Volume mode\n"
                         "CP sets Constant Pressure mode\n"
-                        "0 Stop assisted breathing\n"
                         "S set Speed (in BPM)\n"
                         "V set Volume (in liters)\n"
                         "P set Pressure (in KPa)\n"
                         "E set expiration ratio (x inspiration)\n"
                         "Y set sYnc (in % of cycle)\n"
                         "M show Measurements from the sensor\n"
+                        "T toggle Telemetry data on/off\n"
 #ifdef E2PROM
                         "W Write parameters to permanent memory\n"
 #endif       
                         "D debug (on / off)\n"
                         //"R Reset\n"
                         "? print this\n" )); 
+#else
+       Serial.println(F("CMD: 0 1 CV CP S V P E Y M T"
+#ifdef E2PROM
+                        " W"
+#endif       
+                        " D"
+                        //"R Reset\n"
+                        " ?")); 
+#endif
       }
       break;
-#endif    
     default:   // Unknown command 
+#ifdef serialVerbose 
      Serial.println(F("Unknown command. type '?' for instructions.")); 
+#else
+     Serial.println(F("?")); 
+#endif
     break;
    } 
-#ifndef serialVerbose
- if (!ok) Serial.println('?');
-#endif        
+ if (!ok) Serial.println('?'); else prstat();
 #ifdef watchdog
  Watchdog.reset();
 #endif        
@@ -1004,6 +1119,98 @@ void SerialWait(int t)
 #ifdef dispMenus
 void displayMenu()  
 {
+#ifdef PCF8574LCDDisplay  
+ doDisp=true;  // will update the display by default
+ byte dispt=dispTick % 3;
+ switch (dispPhase) {
+  case 0:
+     strcpy(disp,"OPEN  SOURCE\n VENTILATOR");
+     dispPhase++;
+    break;
+  case 1:
+     strcpy(disp,"Software V0.17");
+     dispDelay=100;
+     dispPhase=100;
+    break;
+  case 10:
+     sprintf(disp, "ERROR %2d\n", dispParam);
+     strcat(disp,(dispParam==0)?"NO SENSOR":"UNKNOWN SENSOR");     
+     dispPhase=10;
+  case 100:
+     if (compression<10000) 
+       sprintf(disp,"S%02d V%d.%d P%d.%d \n",int(BPM),int(volume/1000),int (volume/100) %10,int(compression/1000),int (compression/100) %10);
+      else
+       sprintf(disp,"S%02d V%d.%d P%d \n",int(BPM),int(volume/1000),int (volume/100) %10,int(compression/1000));
+     dispDelay=100;  
+     if (active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
+    break;
+  case 101:
+     strcpy(disp,"\nSTART ");
+     strcat(disp,(CVmode)?"VC":"PC");
+     dispPhase=(dispParam==0)?100:103;
+     dispDelay=80;
+    break;
+  case 102:
+     strcpy(disp,"\nSTOP");
+     dispPhase=100;
+     dispDelay=50;
+    break;
+  case 103:
+     sprintf(disp,"\nTEMP %dc   ",int(temperature)); 
+     dispPhase++;
+     dispDelay=80;
+    break;
+  case 104:
+     sprintf(disp,"\nHumi%d    ",int(humidity));    
+     dispPhase++;
+    break;
+  case 105:
+     sprintf(disp,"\nPRESS. %dRH ",int(relPressure/100));
+     dispPhase++;
+    break;
+  case 106:
+     sprintf(disp,"\nSYNC.  %d  ",int(syncRatio*100.1));
+     dispPhase++;
+    break;
+  case 107:
+     sprintf(disp,"\nRatio %d.%d  ",int(expirationRatio),int (expirationRatio*10) %10);
+     dispPhase=100;
+    break;
+      
+  case 110:
+     sprintf(disp,"\nSET Rate  %d  ",int(reqBPM));
+     dispDelay=60;  
+    break;
+  case 120:
+     sprintf(disp,"\nSET Volume %d.%d",int(reqVolume/1000),int (reqVolume/100) %10); // character N looks better chan character M
+     dispDelay=60;  
+    break;
+  case 130:
+     sprintf(disp,"\nSET Press. %d.%d",int(reqCompression/1000),int (reqCompression/100) %10);
+     dispDelay=60;  
+    break;
+  case 140:
+     sprintf(disp,"\nSET Sync. %2d    ",int(syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
+     dispDelay=60;  
+    break;
+  case 150:
+     dispTick++;
+     sprintf(disp,"\nSET Ex ratio %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
+     dispDelay=60;  
+    break;
+  case 160:
+     strcpy(disp,"\nSave Setup     ");
+     dispDelay=60;  
+    break;
+  default:
+    if (term) Serial.println(dispPhase); 
+    dispPhase=0; // Abnormal the phase should always be defined
+   break;
+  }
+ dispCnt=dispDelay;
+#endif 
+
+#ifdef TM1638Display  
  doDisp=true;  // will update the display by default
  byte dispt=dispTick % 3;
  switch (dispPhase) {
@@ -1110,8 +1317,7 @@ void displayMenu()
     break;
   case 150:
      dispTick++;
-     sprintf(disp,(dispt==2)?"SET   %d.%d":"EXP.  %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
-     if (dispt==1) sprintf(disp,"Ratio %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
+     sprintf(disp,"\nSET EXP Ratio  %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
      dispDelay=60;  
     break;
   case 160:
@@ -1124,6 +1330,7 @@ void displayMenu()
    break;
   }
  dispCnt=dispDelay;
+#endif 
 }
 #endif
 
@@ -1150,8 +1357,13 @@ void Timer()
     case 10:                     // change the display
      if (doDisp)
       {
-       doDisplay(); 
-       doDisp=false;
+       if  (I2CBusy)
+         timCnt-=5;  // retry next time
+        else
+         {
+          doDisplay(); 
+          doDisp=false;
+         } 
       }
      break;
 #endif     
@@ -1202,6 +1414,7 @@ void readSensors() // Works no matter if sensor is present or not (returns defau
 #ifdef BoschBMxSensor 
  BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
  BME280::PresUnit presUnit(BME280::PresUnit_Pa);
+ I2CBusy=true;
  bme.read(pres, temp, hum, tempUnit, presUnit);
 #endif
 
@@ -1212,9 +1425,9 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
    BMP180Phase=false; 
    if (!bmp180.measureTemperature()) 
     {
-      bmp180.begin(); // Restarts the sensor whenever an error is detected
+     bmp180.begin(); // Restarts the sensor whenever an error is detected
 #ifdef debug_3
-      Serial.print('!');
+     Serial.print('!');
 #endif       
     }
   }
@@ -1226,9 +1439,9 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
       BMP180Phase=bmp180.measurePressure();
       if (!BMP180Phase) 
        {
-         bmp180.begin(); // Restarts the sensor whenever an error is detected
+        bmp180.begin(); // Restarts the sensor whenever an error is detected
 #ifdef debug_3
-         Serial.print('!');
+        Serial.print('!');
 #endif       
        }
       
@@ -1251,6 +1464,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
      }  
   }
 #endif
+ I2CBusy=false;
 
  if (isnan(temp) || isnan(pres))  // If data was not correctly acquired
  {
@@ -1323,6 +1537,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
     pressure=defaultPressure;
     ambientPressure=defaultAmbientPressure;
    }
+  if (ambientPressure==0) ambientPressure=defaultAmbientPressure; 
   relPressure=pressure-ambientPressure; 
  
 #ifdef debug_4
@@ -1370,7 +1585,7 @@ void detectSensors()  // Detects the various sensors - initialisation for new se
 #endif
 
 // Add your sensor detection routines here
- 
+ I2CBusy=true;
 #ifdef BoschBMxSensor
  if(bme.begin())
   {
@@ -1409,7 +1624,7 @@ if (sensAmbiantPressure=bmp180.begin())
   else
   if (term) Serial.println(F("No BMP180 sensor"));
 #endif
-
+ I2CBusy=false;
 #ifdef CurrentSense
  pinMode(pin_current_Sense,INPUT_PULLUP);
  delay (10);
@@ -1426,6 +1641,30 @@ if (sensAmbiantPressure=bmp180.begin())
 void setup() {
  // put your setup code here, to run once:
  timerLvl=0;
+ Serial.begin(SERIAL_BAUD);
+ while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
+ term=Serial; 
+ if (term) Serial.println(F("Open Source Ventilator V 0.16"));
+#ifdef jm_Wire
+ twi_readFrom_wait = true; // twi_readFrom() waiting loop
+ twi_writeTo_wait = true;  // twi_writeTo() waiting loop
+#endif 
+#ifdef I2C
+ Wire.begin();
+#endif
+#ifdef PCF8574LCDDisplay
+ Wire.beginTransmission(0x27);     // I2C Address of the PCF8574 chip 
+ int error = Wire.endTransmission();
+ if (error == 0) {
+   Serial.println("LCD");
+   lcd.begin(16, 2); // initialize the lcd
+   lcd.setBacklight(255);
+   lcd.home();
+   lcd.clear();
+  }
+   else 
+    Serial.print(error);
+#endif
  Timer1.initialize(200);  
  Timer1.attachInterrupt(Timer);
 #ifdef watchdog
@@ -1447,22 +1686,6 @@ void setup() {
  digitalWrite(pin_Stepper_Disable, LOW);  // active (inverted)
  motorState=true;
 #endif 
-#ifdef Beep
- beep(20); 
-#endif 
- Serial.begin(SERIAL_BAUD);
- while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
- //int c=1000;
- //while (!Serial && c--) delay(1); // wait for serial port to connect. Needed for native USB (non blocking)
- term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator V 0.16"));
-#ifdef I2C
- Wire.begin();
-#endif
-#ifdef jm_Wire
-// jm_Wire.twi_readFrom_wait = true; // twi_readFrom() waiting loop
-// jm_Wire.twi_writeTo_wait = true;  // twi_writeTo() waiting loop
-#endif 
  detectSensors();
  eeget ();    // read startup parameters (either from EEPROM or default value)
 #ifdef USBcontrol 
@@ -1481,6 +1704,9 @@ void setup() {
 // stepper.setMaxSpeed(3500);
 // stepper.setAcceleration(20000);
 // stepper.moveTo(0);
+#ifdef Beep
+ beep(20); 
+#endif
 }
 
 
@@ -1611,6 +1837,35 @@ void motorFastStop()
  stepper.moveTo(stepper.currentPosition ());  // overshoot, then return
 }
 
+#ifdef serialTelemetry
+void basicTelemetry(boolean b)
+{
+ if (active)
+  {
+   if (!Mactive)
+    {
+     startActive=millis();
+     Mactive=true;
+    }
+   if (telemetry)
+    {
+     Serial.print(float(millis()-startActive)/1000);
+     sep();
+     Serial.print(breathPhase);
+     sep();
+     Serial.print(stepper.currentPosition());
+     sep();
+     Serial.print(relPressure*0.010197162129779282);
+     if (b) Serial.println();
+    }
+   }
+  else
+   Mactive=false;
+}
+#endif
+
+
+
 /*
  *  This function is called once at the start of every breath.
  *  
@@ -1627,6 +1882,7 @@ void breathingCycleStart()
  volume=reqVolume;
  compression=reqCompression;
 #endif 
+ breathPhase=0;
  breathLength=int(60000/BPM); 
  breathe=breathe+breathLength;    // time for the next cycle start
  syncDelay=breathLength*syncRatio;
@@ -1635,6 +1891,37 @@ void breathingCycleStart()
  breathOut=breathTime-breathIn;
  breathInSpeed=volume/breathIn;
  breathOutSpeed=volume/breathOut;
+ breathInAcceleration=breathInSpeed*breathInSpeed*motorAcceleration;
+ breathOutAcceleration=breathOutSpeed*breathOutSpeed*motorAcceleration;
+#ifdef serialTelemetry
+ if (active)
+  {
+   if (telemetry)
+    {
+     basicTelemetry(false); 
+     sep();
+     Serial.print(long(ambientPressure));
+     sep();
+     Serial.print(int(volume));
+     sep();
+     Serial.print(long(volume*motorVolumeRatio));
+     sep();
+     Serial.print(float(breathLength)/1000);
+     sep();
+     Serial.print(float(breathIn)/1000);
+     sep();
+     Serial.print(int(breathInSpeed*motorSpeed));
+     sep();
+     Serial.print(float(breathInAcceleration)/1000);
+     sep();
+     Serial.print(float(breathOut)/1000);
+     sep();
+     Serial.print(int(breathOutSpeed*motorSpeed));
+     sep();
+     Serial.println(float(breathOutAcceleration)/1000);
+     }
+   }
+#endif
 #ifdef debug_0   // print data at the start of each cycle
  Serial.print(breathLength);
  tab();
@@ -1652,8 +1939,7 @@ void breathingCycleStart()
 #endif
  breathGraphCnt=10;              // blinks the LED at the start of a cycle   
  stepper.setMaxSpeed(int(breathInSpeed*motorSpeed));
- stepper.setAcceleration(breathInSpeed*breathInSpeed*motorAcceleration);
- breathPhase=0;
+ stepper.setAcceleration(breathInAcceleration);
  if (active)  // When a real cycle is done (with the motor actually moving)
   {
 #ifdef disableMotorctrl // Optional ability to disable the motor after a time of inactivity
@@ -1732,10 +2018,15 @@ void breathOverpressureAlarm()
 
 void breathingExpirationStart()
 {
- breathPhase=3;
- stepper.setMaxSpeed(int(breathOutSpeed*motorSpeed));
- stepper.setAcceleration(breathOutSpeed*breathOutSpeed*motorAcceleration);
- stepper.moveTo(0);
+ if (breathPhase<3)
+  {breathPhase++; 
+#ifdef serialTelemetry
+   basicTelemetry(true);
+#endif        
+   stepper.setMaxSpeed(int(breathOutSpeed*motorSpeed));
+   stepper.setAcceleration(breathOutAcceleration);
+   stepper.moveTo(0);
+  } 
 }
 
 
@@ -1743,6 +2034,10 @@ void breathAssistTrigger()
 {
  if ((relPressure<-0.1*compressionScale) && (peakPressure<-0.1*compressionScale))
   {
+   breathPhase=4;
+#ifdef serialTelemetry
+   if (active) basicTelemetry(true);
+#endif        
    breathe=millis()-breathLength; // Trigger a new cycle sooner.
 #ifdef debug_1    // print data for user triggered cycle    
    Serial.print(relPressure);
@@ -1751,6 +2046,7 @@ void breathAssistTrigger()
    tab();
    Serial.print(compressionScale);
    Serial.println(F(" Sync"));
+   breathPhase=5;
 #endif        
   }
 }
@@ -1764,12 +2060,15 @@ void loop() {
    {
     tick=tick+samplePeriod;
     readSensors();
+#ifdef serialTelemetry
+   if (active) basicTelemetry(true);
+#endif
 #ifdef sweep
     allSet=((reqBPM==BPM) && (reqVolume==volume) && (reqCompression==compression));
 #endif
     compressionScale=(compression>minCompression)?compression:defaultCompression;
     volumeScale=(volume>minVolume)?volume:defaultVolume;   
-    if (breathPhase=1) breathingInspiration ();
+    if (breathPhase==1) breathingInspiration ();
     breathOverpressureAlarm();
 #ifdef dispBargraph   
     updateBargraph();   
@@ -1809,6 +2108,7 @@ void loop() {
   if (millis()>breathe+breathIn) breathingExpirationStart(); // second half of a cycle
   if ((syncDelay) && ((millis()>breathe+breathLength-syncDelay+20) || ((breathPhase==2) && (stepper.distanceToGo() == 0))))  // Synchronization period
      {
+      breathPhase=4;
       breathAssistTrigger();
      }
 #ifdef watchdog
@@ -1822,8 +2122,8 @@ void loop() {
  Watchdog.reset();
 #endif        
 #ifdef USBcontrol     
- SerialWait(10);          // wait for 100 usec looking for received characters
+ SerialWait(1);          // wait for 10 usec looking for received characters
 #else
- delayMicroseconds(100);  // wait for 100 usec
+ delayMicroseconds(10);  // wait for 10 usec
 #endif 
 }
