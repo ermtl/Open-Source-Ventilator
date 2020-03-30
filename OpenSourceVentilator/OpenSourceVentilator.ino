@@ -229,13 +229,13 @@
 
 #define E2PROM             // Uses the internal EEPROM for parameter storage
 
-//#define TM1638Keyboard     // Use a TM1638 for the keyboard
+#define TM1638Keyboard     // Use a TM1638 for the keyboard
 
 //#define TM1638Display      // Use a TM1638 for the display
 
-//#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
+#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
 
-//#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
+#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
 
 #define ActiveBeeper       // Active beeper can be used on any pin. Passive beeper will require a PWM capable pin
 
@@ -243,9 +243,9 @@
 
 #define BoschBMxSensor     // Bosch Sensortech BMP280 or BME280
 
-// #define BoschBMP180Sensor  // Bosch Sensortech BMP180 
+//#define BoschBMP180Sensor  // Bosch Sensortech BMP180 
 
-#define TwoPressureSensors // Double pressure sensor (one for barometric pressure)
+//#define TwoPressureSensors // Double pressure sensor (one for barometric pressure)
 
 #define stepDirMotor       // Control the motor with step and Direction signals
 
