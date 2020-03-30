@@ -229,13 +229,13 @@
 
 #define E2PROM             // Uses the internal EEPROM for parameter storage
 
-#define TM1638Keyboard     // Use a TM1638 for the keyboard
+//#define TM1638Keyboard     // Use a TM1638 for the keyboard
 
 //#define TM1638Display      // Use a TM1638 for the display
 
-#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
+//#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
 
-#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
+//#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
 
 #define ActiveBeeper       // Active beeper can be used on any pin. Passive beeper will require a PWM capable pin
 
@@ -567,7 +567,9 @@ boolean doDisp,                // indicates if a display update is required or n
         I2CBusy,               // Tells whenever the sensors are used in the main lop so that the display can wait.
         telemetry,             // true if the serial telemetry mode is active, false otherwise.
         debug;                 // True if a debugging mode is used, false otherwise
+#ifdef dispMenus     // Alternate displays must also enable this
 char    disp[dispBufferLength];// Display data buffer
+#endif        
 float   ambientPressure,       // Calculated ambiant air pressure (averaged)
         pressure,              // Current pressure, as read from the sensor
         peakPressure,          // high pass filtered value of the pressure. Used to detect patient initiated breathing cycles
@@ -603,9 +605,11 @@ byte    sc,                    // counter for displaying debugging info about th
         bargraphDot,           // rate indicator blinking segment on the bargraph
         menuItem,              // Menu item currently being set by the user
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
+#ifdef isKeyboard        
 byte    keys[maxBtn],          // Debounced keyboard keys
         kcnt[maxBtn],          // Keyboard debounce counter
         mkeys[maxBtn];         // Key memory (allows to detect button transitions)
+#endif
 
 // Parameters saved to / recovered from EEPROM
 
