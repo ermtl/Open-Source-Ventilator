@@ -99,6 +99,8 @@ width="180" height="180" border="10" />
 width="180" height="180" border="10" />
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/TM1638.jpg" 
 width="180" height="180" border="10" />
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/LCD-PCF8574.png" 
+width="180" height="180" border="10" />
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/Beeper2.png" 
 width="180" height="180" border="10" />
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/LM2596.jpg" 
