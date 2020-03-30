@@ -119,6 +119,9 @@ width="180" height="180" border="10" />
   They all have the pin header on top, you can remove the plastic part and bend the pin for side connection
   There are other types of boards with TM1638 chip with 16 buttons, but they lack the LEDs that are important to monitor air pressure measurement.
   https://www.aliexpress.com/item/32807348409.html
+- HD44780 With PCF8574 2 lines x 16 character LCD with I2C interface
+  These are standard LCD display, and the I2C interface (PCF8574) allows them to be used without taking up many I/O pins.
+  https://www.aliexpress.com/item/32651314933.html
 - Beeper
   This active beeper is easy to drive and the sound level is mild. 
   https://www.aliexpress.com/item/1893768547.html
@@ -141,6 +144,9 @@ width="180" height="180" border="10" />
   https://www.aliexpress.com/item/33029587820.html
   TMC5160 StepStick (by far the best option, 4.4A/phase, can drive NEMA34 steppers)
   https://www.aliexpress.com/item/33051621409.html
+  As latest calculations ans experimental setups indicate the need for a more powerful
+  motor, a LeadShine DM542S (50V 5A seems necessary.
+  https://www.aliexpress.com/item/32953743944.html
 
   For direct drive, a large Nema23 motor with low current and high torque would be best. 
   these motors quickly lose torque as their speed increases, but in this application, 
@@ -210,3 +216,45 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          The following versions will both target the Nano and the Mega with Atmega2560 processor
          for 8 times the available program memory.
  
+       - 0.17 2x16 LCD Display - Telemetry
+       
+          The ability to use an alphanumeric 2 lines * 16 characters LCD display had been
+         requested, it will now be fully supported. Since this LCD uses lots of IO pins, 
+         the retained version is connected to a PCF8574 "Backpack" board to make it I2C 
+         compatible. The LCD+the backpack are sold online for around 2.50$.
+         The TM1638 display is still supported as a minimal option.
+         A good side effect is that the library is lean and so USB/serial terminal control
+         is back by default.
+         At this point, the keyboard and bargraph are still done with the TM1638, but a
+         simple button keyboard will be supported very soon.
+         Telemetry will send information in real time about the breathing cycle for further 
+         data analysis and / or graphical display !
+         This will be very very useful for people developing mechanical solutions, and 
+         doing data analysis to develop motor position <=> volume mapping
+         Data is sent in common CSV format, around 1 data point every 20 millisecond
+         The "T" command, sent through the serial port toggles telemetry on or off.
+
+         every data point includes :
+         - Time since the breathing was activated.
+         - Breathing cycle phase (more phases might be added in the future)
+           0 : Start of new cycle
+           1 : Inspiration
+           2 : Start of expiration
+           3 : Expiration
+           4 : Patient breathing initiation search
+           5 : Patient initiated a breathing cycle
+          - Motor position (in step) Travelled distance depends on driver microstepping
+                                     and driving mechanism.
+          - relative pressure in cm H2O
+          In addition to these data points, during phase 0 (start of cycle), the following 
+          cycle data is sent:
+          - Ambiant pressure (mBar)
+          - Breathing volume per cycle in ml
+          - Motor destination / target (steps)
+          - Breathing length (in seconds)
+          - Breathing in duration (in seconds)
+          - breathing in top speed (in steps/second)
+          - Motor acceleration during inspiration (in steps per second squared)
+          - Breathing out duration (in seconds)
+          - breathing out top speed (in steps/second)
+          - Motor acceleration during expiration (in steps per second squared)
