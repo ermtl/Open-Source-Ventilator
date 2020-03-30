@@ -408,7 +408,7 @@ L MCU_Module:Arduino_Nano_v3.x A102
 U 1 1 5E80A9CC
 P 4575 2750
 F 0 "A102" H 4075 4100 50  0000 C CNN
-F 1 "Arduino_Nano_v3.x" H 4100 4000 50  0000 C CNN
+F 1 "ARDUINO_NANO" H 4100 4000 50  0000 C CNN
 F 2 "Module:Arduino_Nano" H 4575 2750 50  0001 C CIN
 F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 4575 2750 50  0001 C CNN
 	1    4575 2750
