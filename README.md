@@ -216,9 +216,9 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          The following versions will both target the Nano and the Mega with Atmega2560 processor
          for 8 times the available program memory.
  
-       - 0.17 2x16 LCD Display - Telemetry
+ - 0.17 2x16 LCD Display - Telemetry
        
-          The ability to use an alphanumeric 2 lines * 16 characters LCD display had been
+         The ability to use an alphanumeric 2 lines * 16 characters LCD display had been
          requested, it will now be fully supported. Since this LCD uses lots of IO pins, 
          the retained version is connected to a PCF8574 "Backpack" board to make it I2C 
          compatible. The LCD+the backpack are sold online for around 2.50$.
@@ -246,7 +246,8 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
           - Motor position (in step) Travelled distance depends on driver microstepping
                                      and driving mechanism.
           - relative pressure in cm H2O
-          In addition to these data points, during phase 0 (start of cycle), the following 
+         
+         In addition to these data points, during phase 0 (start of cycle), the following 
           cycle data is sent:
           - Ambiant pressure (mBar)
           - Breathing volume per cycle in ml
