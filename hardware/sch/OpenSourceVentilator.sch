@@ -3,10 +3,10 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 1 3
+Sheet 1 4
 Title "OpenSourceVentilator Controller"
 Date "Mar. 28 2020"
-Rev "2"
+Rev "2b"
 Comp "https://github.com/ermtl/Open-Source-Ventilator"
 Comment1 "Drafting: Robbie Sharma"
 Comment2 "Designer: Eric Vinter"
@@ -243,10 +243,6 @@ Wire Wire Line
 	2350 2250 2875 2250
 Wire Wire Line
 	2350 2150 2875 2150
-Wire Wire Line
-	5075 3250 6250 3250
-Wire Wire Line
-	5075 3150 5950 3150
 $Comp
 L Connector_Generic:Conn_01x04 J109
 U 1 1 5E7F3A60
@@ -261,13 +257,13 @@ $EndComp
 Wire Wire Line
 	7125 3350 6800 3350
 Text Label 5125 3150 0    50   ~ 0
-SDA_BME
+SDA_I2C
 Text Label 5125 3250 0    50   ~ 0
-SCL_BME
+SCL_I2C
 Wire Wire Line
 	4675 1675 4675 1750
 Wire Wire Line
-	5525 3450 6950 3450
+	5550 3450 6950 3450
 Wire Wire Line
 	2875 2250 2875 2950
 Wire Wire Line
@@ -275,30 +271,6 @@ Wire Wire Line
 Connection ~ 4775 1075
 Wire Wire Line
 	4775 1075 4775 1750
-Text Label 3700 3450 0    50   ~ 0
-LED
-$Comp
-L Device:LED D101
-U 1 1 5E831024
-P 3225 3600
-F 0 "D101" V 3264 3483 50  0000 R CNN
-F 1 "LED" V 3173 3483 50  0000 R CNN
-F 2 "" H 3225 3600 50  0001 C CNN
-F 3 "~" H 3225 3600 50  0001 C CNN
-	1    3225 3600
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Device:R_US R101
-U 1 1 5E831E5C
-P 3500 3450
-F 0 "R101" V 3705 3450 50  0000 C CNN
-F 1 "220ohm" V 3614 3450 50  0000 C CNN
-F 2 "" V 3540 3440 50  0001 C CNN
-F 3 "~" H 3500 3450 50  0001 C CNN
-	1    3500 3450
-	0    -1   -1   0   
-$EndComp
 $Comp
 L Connector_Generic:Conn_01x03 J104
 U 1 1 5E833250
@@ -361,12 +333,6 @@ Connection ~ 2875 3225
 Wire Wire Line
 	2875 3225 2875 3900
 Wire Wire Line
-	3650 3450 4075 3450
-Wire Wire Line
-	3350 3450 3225 3450
-Wire Wire Line
-	3225 3750 3225 3900
-Wire Wire Line
 	6800 5125 7775 5125
 Wire Wire Line
 	7775 5125 7775 5225
@@ -417,13 +383,11 @@ Wire Wire Line
 	5000 1650 5000 1675
 Connection ~ 5000 1675
 Wire Wire Line
-	5000 1675 5525 1675
-Wire Wire Line
-	6100 1200 5325 1200
+	5000 1675 5550 1675
 Wire Wire Line
 	4475 1200 4475 1750
 Wire Wire Line
-	5650 3350 5650 3900
+	5650 3350 5650 3675
 Wire Wire Line
 	5650 3900 5250 3900
 $Comp
@@ -444,7 +408,7 @@ L MCU_Module:Arduino_Nano_v3.x A102
 U 1 1 5E80A9CC
 P 4575 2750
 F 0 "A102" H 4075 4100 50  0000 C CNN
-F 1 "Arduino_Nano_v3.x" H 4100 4000 50  0000 C CNN
+F 1 "ARDUINO_NANO" H 4100 4000 50  0000 C CNN
 F 2 "Module:Arduino_Nano" H 4575 2750 50  0001 C CIN
 F 3 "http://www.mouser.com/pdfdocs/Gravitech_Arduino_Nano3_0.pdf" H 4575 2750 50  0001 C CNN
 	1    4575 2750
@@ -455,11 +419,6 @@ Wire Wire Line
 Wire Wire Line
 	4675 3900 5250 3900
 Connection ~ 5250 3900
-Wire Wire Line
-	2875 3900 3225 3900
-Connection ~ 3225 3900
-Wire Wire Line
-	3225 3900 4000 3900
 Wire Wire Line
 	4000 3900 4000 4175
 Connection ~ 4000 3900
@@ -582,7 +541,7 @@ Wire Wire Line
 Wire Wire Line
 	2375 7025 2375 6550
 Wire Wire Line
-	5525 1675 5525 3450
+	5550 1675 5550 3450
 Wire Notes Line
 	6025 3750 11200 3750
 Wire Notes Line
@@ -630,101 +589,68 @@ Text Label 3125 5725 2    50   ~ 0
 VPWR_24V
 Wire Wire Line
 	2550 5725 3125 5725
-Text Label 7275 1450 2    50   ~ 0
+Text Label 7725 1150 2    50   ~ 0
 VPWR_24V
 Wire Wire Line
 	6100 1300 5650 1300
-Wire Wire Line
-	5650 1300 5650 1450
 Connection ~ 5650 3350
 $Comp
 L Device:CP1_Small C104
 U 1 1 5E8292E8
-P 6925 2275
-F 0 "C104" H 7075 2350 50  0000 C CNN
-F 1 "10nF" H 7100 2275 50  0000 C CNN
-F 2 "" H 6925 2275 50  0001 C CNN
-F 3 "~" H 6925 2275 50  0001 C CNN
-	1    6925 2275
+P 7625 1625
+F 0 "C104" H 7775 1700 50  0000 C CNN
+F 1 "10nF" H 7800 1625 50  0000 C CNN
+F 2 "" H 7625 1625 50  0001 C CNN
+F 3 "~" H 7625 1625 50  0001 C CNN
+	1    7625 1625
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5075 2850 5850 2850
+	5075 2850 5425 2850
 $Comp
 L Device:R_Small_US R104
 U 1 1 5E82FA3D
-P 6775 1650
-F 0 "R104" H 6707 1604 50  0000 R CNN
-F 1 "68K" H 6707 1695 50  0000 R CNN
-F 2 "" H 6775 1650 50  0001 C CNN
-F 3 "~" H 6775 1650 50  0001 C CNN
-	1    6775 1650
+P 7225 1350
+F 0 "R104" H 7157 1304 50  0000 R CNN
+F 1 "68K" H 7157 1395 50  0000 R CNN
+F 2 "" H 7225 1350 50  0001 C CNN
+F 3 "~" H 7225 1350 50  0001 C CNN
+	1    7225 1350
 	-1   0    0    1   
 $EndComp
 $Comp
 L Device:R_Small_US R105
 U 1 1 5E85B73C
-P 6775 1975
-F 0 "R105" H 6707 1929 50  0000 R CNN
-F 1 "10K" H 6707 2020 50  0000 R CNN
-F 2 "" H 6775 1975 50  0001 C CNN
-F 3 "~" H 6775 1975 50  0001 C CNN
-	1    6775 1975
+P 7225 1675
+F 0 "R105" H 7157 1629 50  0000 R CNN
+F 1 "10K" H 7157 1720 50  0000 R CNN
+F 2 "" H 7225 1675 50  0001 C CNN
+F 3 "~" H 7225 1675 50  0001 C CNN
+	1    7225 1675
 	-1   0    0    1   
 $EndComp
 $Comp
 L power:GND #PWR0112
 U 1 1 5E85CBBC
-P 6775 2450
-F 0 "#PWR0112" H 6775 2200 50  0001 C CNN
-F 1 "GND" H 6780 2277 50  0000 C CNN
-F 2 "" H 6775 2450 50  0001 C CNN
-F 3 "" H 6775 2450 50  0001 C CNN
-	1    6775 2450
+P 7225 2150
+F 0 "#PWR0112" H 7225 1900 50  0001 C CNN
+F 1 "GND" H 7230 1977 50  0000 C CNN
+F 2 "" H 7225 2150 50  0001 C CNN
+F 3 "" H 7225 2150 50  0001 C CNN
+	1    7225 2150
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7275 1450 6775 1450
+	7725 1150 7225 1150
 Wire Wire Line
-	6775 1450 6775 1550
+	7225 1150 7225 1250
 Wire Wire Line
-	6775 1750 6775 1800
+	7225 1450 7225 1500
 Wire Wire Line
-	6775 2075 6775 2175
+	7225 1775 7225 1825
+Connection ~ 7225 1500
 Wire Wire Line
-	6925 2175 6775 2175
-Connection ~ 6775 2175
-Wire Wire Line
-	6775 2175 6775 2375
-Wire Wire Line
-	6925 2375 6775 2375
-Connection ~ 6775 2375
-Wire Wire Line
-	6775 2375 6775 2450
-Connection ~ 6775 1800
-Wire Wire Line
-	6775 1800 6775 1875
-$Comp
-L Device:CP1_Small C103
-U 1 1 5E8A97B8
-P 5325 1350
-F 0 "C103" H 5475 1425 50  0000 C CNN
-F 1 "100uF" H 5525 1350 50  0000 C CNN
-F 2 "" H 5325 1350 50  0001 C CNN
-F 3 "~" H 5325 1350 50  0001 C CNN
-	1    5325 1350
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5325 1200 5325 1250
-Connection ~ 5325 1200
-Wire Wire Line
-	5325 1200 4475 1200
-Wire Wire Line
-	5325 1450 5650 1450
-Connection ~ 5650 1450
-Wire Wire Line
-	5650 1450 5650 3350
+	7225 1500 7225 1575
 $Comp
 L power:GND #PWR0113
 U 1 1 5E8B8AF2
@@ -801,14 +727,8 @@ Wire Wire Line
 	3225 2350 3225 2950
 Wire Wire Line
 	3225 2950 4075 2950
-Text Label 3525 3050 0    50   ~ 0
+Text Label 3850 3050 2    50   ~ 0
 BUZZER
-Wire Wire Line
-	3525 3050 4075 3050
-Wire Wire Line
-	3525 3125 3525 3050
-Wire Wire Line
-	1000 3125 3525 3125
 $Comp
 L Device:Fuse_Polarized_Small F101
 U 1 1 5E96C0EF
@@ -844,59 +764,45 @@ $EndComp
 $Comp
 L power:+5V #PWR0111
 U 1 1 5E98B924
-P 5950 2425
-F 0 "#PWR0111" H 5950 2275 50  0001 C CNN
-F 1 "+5V" H 6000 2575 50  0000 C CNN
-F 2 "" H 5950 2425 50  0001 C CNN
-F 3 "" H 5950 2425 50  0001 C CNN
-	1    5950 2425
+P 5750 1925
+F 0 "#PWR0111" H 5750 1775 50  0001 C CNN
+F 1 "+5V" H 5800 2075 50  0000 C CNN
+F 2 "" H 5750 1925 50  0001 C CNN
+F 3 "" H 5750 1925 50  0001 C CNN
+	1    5750 1925
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R_Small_US R102
 U 1 1 5E98BDE8
-P 5950 2675
-F 0 "R102" H 5882 2629 50  0000 R CNN
-F 1 "4.7K" H 5882 2720 50  0000 R CNN
-F 2 "" H 5950 2675 50  0001 C CNN
-F 3 "~" H 5950 2675 50  0001 C CNN
-	1    5950 2675
+P 5750 2400
+F 0 "R102" H 5682 2354 50  0000 R CNN
+F 1 "10K" H 5682 2445 50  0000 R CNN
+F 2 "" H 5750 2400 50  0001 C CNN
+F 3 "~" H 5750 2400 50  0001 C CNN
+	1    5750 2400
 	-1   0    0    1   
 $EndComp
 $Comp
 L Device:R_Small_US R103
 U 1 1 5E9ACD4E
-P 6250 2675
-F 0 "R103" H 6182 2629 50  0000 R CNN
-F 1 "4.7K" H 6182 2720 50  0000 R CNN
-F 2 "" H 6250 2675 50  0001 C CNN
-F 3 "~" H 6250 2675 50  0001 C CNN
-	1    6250 2675
+P 6050 2400
+F 0 "R103" H 5982 2354 50  0000 R CNN
+F 1 "10K" H 5982 2445 50  0000 R CNN
+F 2 "" H 6050 2400 50  0001 C CNN
+F 3 "~" H 6050 2400 50  0001 C CNN
+	1    6050 2400
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	5950 2425 5950 2475
+	5750 1925 5750 2200
 Wire Wire Line
-	5950 2475 6250 2475
+	5750 2200 6050 2200
 Wire Wire Line
-	6250 2475 6250 2575
-Connection ~ 5950 2475
+	6050 2200 6050 2300
+Connection ~ 5750 2200
 Wire Wire Line
-	5950 2475 5950 2575
-Wire Wire Line
-	5950 2775 5950 3150
-Connection ~ 5950 3150
-Wire Wire Line
-	5950 3150 6500 3150
-Wire Wire Line
-	6250 2775 6250 3250
-Connection ~ 6250 3250
-Wire Wire Line
-	6250 3250 6650 3250
-Wire Wire Line
-	5850 1800 6775 1800
-Wire Wire Line
-	5850 1800 5850 2850
+	5750 2200 5750 2300
 $Comp
 L Device:R_Small_US R106
 U 1 1 5EA0D211
@@ -967,41 +873,8 @@ F 3 "~" H 3500 1700 50  0001 C CNN
 	1    3500 1700
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C102
-U 1 1 5E83667A
-P 3500 1975
-F 0 "C102" V 3775 1975 50  0000 C CNN
-F 1 "100uF" V 3650 1975 50  0000 C CNN
-F 2 "" H 3500 1975 50  0001 C CNN
-F 3 "~" H 3500 1975 50  0001 C CNN
-	1    3500 1975
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	3300 1700 3200 1700
 Wire Wire Line
 	3100 1700 3100 1975
-Wire Wire Line
-	3700 1700 3750 1700
-Wire Wire Line
-	3950 1700 3950 2150
-Wire Wire Line
-	3950 2150 4075 2150
-Wire Wire Line
-	3600 1975 3750 1975
-Wire Wire Line
-	3750 1975 3750 1700
-Connection ~ 3750 1700
-Wire Wire Line
-	3750 1700 3950 1700
-Wire Wire Line
-	3400 1975 3200 1975
-Wire Wire Line
-	3200 1975 3200 1700
-Connection ~ 3200 1700
-Wire Wire Line
-	3200 1700 3100 1700
 $Sheet
 S 9125 1050 1000 900 
 U 5E86E19B
@@ -1041,7 +914,7 @@ Wire Wire Line
 Wire Wire Line
 	10500 1550 10500 1425
 Wire Wire Line
-	4775 750  4775 1075
+	4775 750  4775 850 
 Wire Wire Line
 	8650 1300 9125 1300
 Text Label 8650 1300 0    55   ~ 0
@@ -1052,4 +925,168 @@ Wire Notes Line
 	8275 2250 11225 2250
 Text Notes 9100 750  2    157  ~ 31
 Alarm
+Wire Wire Line
+	3700 1700 3950 1700
+Wire Wire Line
+	3100 1700 3300 1700
+Wire Wire Line
+	3950 2350 4075 2350
+Wire Wire Line
+	3950 1700 3950 2350
+Wire Wire Line
+	5650 1300 5650 3350
+Wire Wire Line
+	4475 1200 6100 1200
+Wire Wire Line
+	7225 1500 7625 1500
+Wire Wire Line
+	7625 1500 7625 1525
+Wire Wire Line
+	7225 1825 7625 1825
+Wire Wire Line
+	7625 1825 7625 1725
+Connection ~ 7225 1825
+Wire Wire Line
+	7225 1825 7225 2000
+$Sheet
+S 9000 2625 1225 650 
+U 5E885EB6
+F0 "Analog User Controls" 55
+F1 "AnalogUserControls.sch" 55
+F2 "VIN" I L 9000 2700 55 
+F3 "BUTTONS" O R 10225 2775 55 
+F4 "PEEP" O R 10225 2925 55 
+F5 "TIDAL_VOL" O R 10225 3075 55 
+F6 "RESP_RATE" O R 10225 3200 55 
+F7 "GND" B L 9000 3175 55 
+$EndSheet
+Wire Wire Line
+	5075 3450 5475 3450
+Text Label 5500 2950 2    55   ~ 0
+BUTTONS
+Wire Wire Line
+	5075 2950 5500 2950
+Text Label 5500 3050 2    55   ~ 0
+PEEP_CTL
+Text Label 5475 3350 2    55   ~ 0
+RR_CTL
+Wire Wire Line
+	5075 3050 5500 3050
+Text Label 5475 3450 2    55   ~ 0
+TV_CTL
+Wire Wire Line
+	5075 3350 5475 3350
+Text Label 10575 3075 2    55   ~ 0
+TV_CTL
+Text Label 10675 2775 2    55   ~ 0
+BUTTONS
+Text Label 10700 2925 2    55   ~ 0
+PEEP_CTL
+Text Label 10600 3200 2    55   ~ 0
+RR_CTL
+Wire Wire Line
+	10600 3200 10225 3200
+Wire Wire Line
+	10575 3075 10225 3075
+Wire Wire Line
+	10700 2925 10225 2925
+Wire Wire Line
+	10675 2775 10225 2775
+Wire Wire Line
+	4775 850  7950 850 
+Wire Wire Line
+	7950 850  7950 2700
+Wire Wire Line
+	7950 2700 9000 2700
+Connection ~ 4775 850 
+Wire Wire Line
+	4775 850  4775 1075
+Wire Wire Line
+	5650 3675 8675 3675
+Wire Wire Line
+	8675 3675 8675 3175
+Wire Wire Line
+	8675 3175 9000 3175
+Connection ~ 5650 3675
+Wire Wire Line
+	5650 3675 5650 3900
+Wire Wire Line
+	5075 3150 5750 3150
+Wire Wire Line
+	5750 2500 5750 3150
+Connection ~ 5750 3150
+Wire Wire Line
+	5750 3150 6275 3150
+Wire Wire Line
+	6050 2500 6050 3250
+Wire Wire Line
+	5075 3250 6050 3250
+Connection ~ 6050 3250
+Wire Wire Line
+	6050 3250 6375 3250
+Wire Wire Line
+	7225 1500 5425 1500
+Wire Wire Line
+	5425 1500 5425 2850
+$Comp
+L Connector_Generic:Conn_01x04 J113
+U 1 1 5EA301ED
+P 6825 2350
+F 0 "J113" H 6905 2342 50  0000 L CNN
+F 1 "LCD_PCF8574" H 6905 2251 50  0000 L CNN
+F 2 "" H 6825 2350 50  0001 C CNN
+F 3 "~" H 6825 2350 50  0001 C CNN
+	1    6825 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6625 2450 6275 2450
+Wire Wire Line
+	6275 2450 6275 3150
+Connection ~ 6275 3150
+Wire Wire Line
+	6275 3150 6500 3150
+Wire Wire Line
+	6625 2550 6375 2550
+Wire Wire Line
+	6375 2550 6375 3250
+Connection ~ 6375 3250
+Wire Wire Line
+	6375 3250 6650 3250
+Wire Wire Line
+	7225 2000 6525 2000
+Wire Wire Line
+	6525 2000 6525 2250
+Wire Wire Line
+	6525 2250 6625 2250
+Connection ~ 7225 2000
+Wire Wire Line
+	7225 2000 7225 2150
+Wire Wire Line
+	6375 2200 6375 2350
+Wire Wire Line
+	6375 2350 6625 2350
+Wire Notes Line
+	2000 2625 2825 2625
+Wire Notes Line
+	2825 2625 2825 1725
+Wire Notes Line
+	2825 1725 2000 1725
+Wire Notes Line
+	2000 1725 2000 2625
+Text Notes 2700 1675 2    55   ~ 11
+**Replacable by\nLCD PCF8574 \non I2C Pins\nA4/A5
+Text Notes 11000 675  2    55   ~ 11
+*Not necessary for controller prototyping
+Connection ~ 6050 2200
+Wire Wire Line
+	6050 2200 6375 2200
+Wire Wire Line
+	2875 3900 4000 3900
+Wire Wire Line
+	4075 3050 3850 3050
+Wire Wire Line
+	3850 3050 3850 3125
+Wire Wire Line
+	1000 3125 3850 3125
 $EndSCHEMATC
