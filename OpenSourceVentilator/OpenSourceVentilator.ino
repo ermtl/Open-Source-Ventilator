@@ -133,6 +133,7 @@
          speed, acceleration for various parts of the cycle.
          This data should be extremely useful for developping mechanical prototypes and shows
          the ability to use a remote HMI if desired.
+         define ArduinoPlotter for proper visualisation scaling, comment it for real telemetry data 
          This version also add a keyboard as an alternative to the TM1638 keyboard.
          The keyboard used is made with 5 buttons all connected to a single analog input for
          simpler cabling and preserving controller pins.
