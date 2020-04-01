@@ -2155,7 +2155,9 @@ void breathingInspiration ()
    if ((relPressure>compressionScale) && (breathPhase==1))  // Check for pressure
     {
      motorFastStop();
-     if (stepper.currentPosition ()<(motorTarget)*failVolumeRatio) beep(300,1); // Insufficient volume alarm
+#ifdef Beeper 
+      if (stepper.currentPosition ()<(motorTarget)*failVolumeRatio) beep(300,1); // Insufficient volume alarm
+#endif
     }
   }
 }
