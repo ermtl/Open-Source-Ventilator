@@ -5,6 +5,10 @@ email , or any other method before making a change.
 
 Please note we have a code of conduct, please follow it in all your interactions with the project.
 
+# Contact
+
+Email is net d0t mailpeers at osventilator (the other way around)
+
 ## Pull Request Process
 
 1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
