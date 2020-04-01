@@ -15,6 +15,11 @@ NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.u
 
 Thanks to [uxvrob](https://github.com/uxvrob) we now have a [complete schematic diagram](https://github.com/ermtl/Open-Source-Ventilator/blob/master/hardware/OpenSourceVentilator_sch.pdf) so that the controller can be tested.
 
+The controller now outputs data that can use the Arduino plotter to output realtime data. Actual plot below.
+<img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/OSV-Graph.png" 
+ width="800" height="533" border="10" />
+ (release notes are at the end)
+
 # Main components
 
 - The arduino Nano was chosen as a controller for it's ability to perform the realtime tasks with relatively low latency (step generation & data acquisition) and it's universal availability. More sophisticated controllers such as the Raspberry Pi usually have real time issues and unpredictable latency. Also, the Arduino ecosystem is very rich in well tested libraries.
@@ -261,3 +266,35 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
           - Breathing out duration (in seconds)
           - breathing out top speed (in steps/second)
           - Motor acceleration during expiration (in steps per second squared)
+          
+    0.20 Realtime graphics, Keyboard, trajectory
+         
+         This version adds realtime graphics, compatible with the Arduino serial plotter.
+         This is an extension of the telemetry in Version 0.17, completed and scaled properly
+         for display.
+         It shows 2 series of values. The first is updated in realtime (every 20ms) and shows 
+         the breathing cycle itself, the commanded motor position, it's actual movement, the 
+         pressure sensor output and alarm number.
+         The second set is updated once per cycle and shows various values linked to timing, 
+         speed, acceleration for various parts of the cycle.
+         This data should be extremely useful for developping mechanical prototypes and shows
+         the ability to use a remote HMI if desired.
+         This version also add a keyboard as an alternative to the TM1638 keyboard.
+         The keyboard used is made with 5 buttons all connected to a single analog input for
+         simpler cabling and preserving controller pins.
+         https://electronics.stackexchange.com/questions/101409/how-to-debouce-six-buttons-on-one-analog-pin-with-arduino
+         The keyboard I use have the following values:
+         - 10K to ground
+         - 'Enter' button connected to +5V
+         - 'Prev'  button connected with a 22Ko resistor
+         - 'Next'  button connected with a 10Ko resistor
+         - 'Up'    button connected with a 3.6Ko resistor
+         - 'Down'  button connected with a 1Ko resistor
+         The resulting analog values are stored in the KbdVals[] array, and value tolerance in KbdTols[] array
+         If you use different resistor values, uncomment debugAnalogKeyboard to get the analog values to fill the 
+         array values.
+         Please note that when plotting the graph, while the controller would accept serial data input,the arduino plotter 
+         does not allow it, so data needs to be changed using the physical keyboard.
+         A 3D printed faceplate containing the display, the buttons and the buzzer is available (including FreeCAD drawing)
+         in the 3D-Print directory .
+         While graphing the data, a few corrections were made to the trajectory engine.           
