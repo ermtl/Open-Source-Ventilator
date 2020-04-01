@@ -15,9 +15,10 @@ NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.u
 
 Thanks to [uxvrob](https://github.com/uxvrob) we now have a [complete schematic diagram](https://github.com/ermtl/Open-Source-Ventilator/blob/master/hardware/OpenSourceVentilator_sch.pdf) so that the controller can be tested.
 
-The controller now outputs data that can use the Arduino plotter to output realtime data. Actual plot below.
+The controller now outputs data that can use an external HMI or the Arduino plotter to output realtime data. Actual plot below.
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/OSV-Graph.png" 
  width="800" height="533" border="10" />
+ 
  (release notes are at the end)
 
 # Main components
@@ -279,6 +280,7 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          speed, acceleration for various parts of the cycle.
          This data should be extremely useful for developping mechanical prototypes and shows
          the ability to use a remote HMI if desired.
+         define ArduinoPlotter for proper visualisation scaling, comment it for real telemetry data 
          This version also add a keyboard as an alternative to the TM1638 keyboard.
          The keyboard used is made with 5 buttons all connected to a single analog input for
          simpler cabling and preserving controller pins.
