@@ -42,17 +42,19 @@ Since the software uses industry standard STEP/DIR interface, any external drive
 
 To compile the software, you will need the following libraries (all from the library manager) :
 ```
-#include <BME280I2C.h>      // Temperature / humidity / pressure
-                            //  by Tyler Glenn - https://github.com/finitespace/BME280
-#include <Wire.h>           // I2C protocol
-#include <EEPROM.h>         // read / write to the processor's internal EEPROM
-#include <TM1638plus.h>     // Keyboard / display / LED combo board
-                            //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
-#include <AccelStepper.h>   // Stepper / servo library with step pulse / dir interface
-                            //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
-#include "TimerOne.h"       // Timer component
-                            //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
-                            //  https://playground.arduino.cc/Code/Timer1/
+#include <BME280I2C.h>             // Temperature / humidity / pressure
+                                   //  by Tyler Glenn - https://github.com/finitespace/BME280
+#include <Wire.h>                  // I2C protocol
+#include <EEPROM.h>                // read / write to the processor's internal EEPROM
+#include <TM1638plus.h>            // Keyboard / display / LED combo board
+                                   //  By Gavin Lyons - https://github.com/gavinlyonsrepo/TM1638plus
+#include <AccelStepper.h>          // Stepper / servo library with step pulse / dir interface
+                                   //  By Mike McCauley - http://www.airspayce.com/mikem/arduino/AccelStepper
+#include "TimerOne.h"              // Timer component
+                                   //  By Jesse Tane, Jérôme Despatis, Michael Polli, Dan Clemens, Paul Stroffregen
+                                   //  https://playground.arduino.cc/Code/Timer1/
+#include <LiquidCrystal_PCF8574.h> // LCD with PCF8574 "backpack"
+                                   //  Matthias Hertel - http://www.mathertel.de/Arduino/LiquidCrystal_PCF8574.aspx 
 ```
 # Software Functions
 
