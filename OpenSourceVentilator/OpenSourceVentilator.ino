@@ -1,3 +1,4 @@
+
 /*
 
   Open source Ventilator
@@ -200,6 +201,7 @@
        some changes have been made to havee a lower default volume in case the machine is used 
        with an infant to prevent damaging their lungs with an adult setting.
 */
+#include "eeprom_checker.h"
 
 #define minBPM                     10.0   // minimum respiratory speed
 #define defaultBPM                 20.0   // default respiratory speed
@@ -963,8 +965,13 @@ void beep(int lng,byte err)  // Launch a beep sound
 
 typedef struct
   {
-   float reqBPM,reqVolume,reqCompression,syncRatio,expirationRatio;
-   boolean cvMode,active;
+   float reqBPM;
+   float reqVolume;
+   float reqCompression;
+   float syncRatio;
+   float expirationRatio;
+   boolean cvMode;
+   boolean active;
    int ambientPressure;
   } EEPROM_Data;
 
@@ -993,6 +1000,8 @@ void eeput (int n)  // records to EEPROM (only if values are validated)
    b=(CVmode)?1:0;
    EEPROM.put(eeAddress, b);
    eeAddress += sizeof(byte);
+
+   eeprom_write_crc(EEPROM);
   }
 }    
 #endif
@@ -1018,10 +1027,10 @@ void eeget ()
  EEPROM.get(eeAddress, cvm);
  eeAddress += sizeof(byte);
  // Check if the data is coherent
- boolean isOk=checkValues();
+ boolean isOk = checkValues();
  if (tac>1) isOk=false; // is the value 0 or 1 ?
  if (cvm>1) isOk=false; // is the value 0 or 1 ?
- if (!isOk) 
+ if (!isOk || !eeprom_test_crc(EEPROM)) 
   {
    reqBPM          = defaultBPM;
    reqVolume       = defaultVolume;
