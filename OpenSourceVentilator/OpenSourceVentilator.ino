@@ -154,6 +154,14 @@
          in the 3D-Print directory .
          While graphing the data, a few corrections were made to the trajectory engine. 
 
+    0.21 Pressure unit converted to cm H2O / minor changes
+         
+         - This version implements the requested change in pressure units as the medical community uses cm H2O and the sensors use Pa.
+         - The 'Up' and 'Down' keys now have an auto repeat.
+         - When the ventilator is active and 'Enter' is used to stop it, the key press must be pressed 2 seconds and an alarm is sounded.
+         - The data dispay includes ambiant pressure (can be used to check negative pressure rooms)
+         - It now uses the updated TM1638 library (Version 1.4+), you need to update or you'll have a compile error.
+         - #define I2CCheck : displays a list of the I2C devices found upon startup (only for debug or for external HMI)
          
 
     GPL V3 Licence
@@ -203,10 +211,10 @@
 #define stepVolume                 20.0   // adjustment step for respiratory volume in milliliters 
 #define maxVolume                 800.0   // maximum respiratory volume in milliliters 
 #define maxVolumeChange             0.25  // maximum respiratory volume change in proportion of final value per beat (1=100%) 
-#define minCompression           1000.00  // minimum compression for the ambu-bag in Pa
-#define stepCompression           500.00  // adjustment step for compression for the ambu-bag in Pa
-#define defaultCompression       3000.00  // default compression for the ambu-bag in Pa
-#define maxCompression          20000.00  // maximum compression for the ambu-bag in Pa
+#define minCompression             10.00  // minimum compression for the ambu-bag in cm H2O
+#define stepCompression             5.00  // adjustment step for compression for the ambu-bag in cm H2O
+#define defaultCompression         20.00  // default compression for the ambu-bag in cm H2O
+#define maxCompression             60.00  // maximum compression for the ambu-bag in cm H2O
 #define maxCompressionChange        0.5   // maximum compression for the ambu-bag change in proportion of final value per beat (1=100%)
 #define minSyncRatio                0.00  // minimum portion of the cycle for breath synchronisation
 #define stepSyncRatio               0.05  // adjustment step for portion of the cycle for breath synchronisation
@@ -222,15 +230,15 @@
 
 #define ambientPressureFilter       0.02  // IIR filtering ratio (lower value produce longer time constant)
 #define avgPressureFilter           0.1   // IIR filtering ratio (lower value produce longer time constant)
-#define defaultPressure        101325.00  // Pressure in Pa returned when no sensor is found (1 atm)
-#define defaultAmbientPressure 101325.00  // assumed ambient pressure in Pa returned when no sensor is found (1 atm)
+#define defaultPressure          1033.22  // Pressure in cm H2O returned when no sensor is found (1 atm)
+#define defaultAmbientPressure   1033.22  // assumed ambient pressure in cm H2O returned when no sensor is found (1 atm)
 #define defaultHumidity            50.00  // humidity in % RH returned when no sensor is found
 #define defaultTemperature         20.00  // temperature in °C returned when no sensor is found
 #define alarmCompressionValue       1.1   // if the pressure exceeds the presed value * alarmCompressionValue, 
                                           // then trigger an alarm and stop the motor if needed  
-#define minAtmosphericPressure 60000     // minimum atmospheric pressure that would be considered valid                                           
-#define maxAtmosphericPressure 120000    // maximum atmospheric pressure that would be considered valid                                           
-
+#define minAtmosphericPressure    583     // minimum atmospheric pressure that would be considered valid (15000 ft / 4577m)                                          
+                                          // Source : https://www.avs.org/AVS/files/c7/c7edaedb-95b2-438f-adfb-36de54f87b9e.pdf
+#define maxAtmosphericPressure   1200     // maximum atmospheric pressure that would be considered valid                                           
 
 
 /*******************************   MOTOR PARAMETERS   *******************************
@@ -264,9 +272,9 @@
 
 #define E2PROM             // Uses the internal EEPROM for parameter storage
 
-//#define TM1638Keyboard     // Use a TM1638 for the keyboard
-
 #define analogKeyboard
+
+//#define TM1638Keyboard     // Use a TM1638 for the keyboard
 
 //#define TM1638Display      // Use a TM1638 for the display
 
@@ -311,7 +319,7 @@
 // #define debug_4      // temperature / humidity / pressure 
 
 //#define debugAnalogKeyboard
-
+#define I2CCheck        // does an I2C bus scan and reports valid addresses. 
 #define ArduinoPlotter  // This will turn on telemetry automatically
                         // With this feature on, absolute pressure and motor speeds are scaled.  
 
@@ -471,7 +479,7 @@
 
        
 #ifdef I2C
-#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
+// #define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
 #ifdef jm_Wire
 #include <jm_Wire.h>              // I2C protocol, contains a workaround for a longstanding issue with the Wire library
                                   // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
@@ -548,6 +556,13 @@ const int KbdTols[] = {17,26,39,47,52};
 #define btns    5
 #define analogTol 0.05 // percentage of allowed error
 #endif
+
+#ifdef isKeyboard
+#define keyRpt1 100  // Number of ticks before first key repeat
+#define keyRpt   30  // Number of ticks between subsequent key repeats
+#define okLong  150  // around 3 seconds 
+#endif
+
 
 
 #ifdef TM1638Display
@@ -638,6 +653,8 @@ extern bool twi_writeTo_wait;         // Must be set to true to activate the tim
 #define keyIdleReturn 16000    // returns to main menu after 16 seconds without key press
 #define motorOffDelay 10000    // Motor is cut off after that time being inactive.
 
+#define PaToCmH2O 0.010197162129779282 // Conversion coefficient
+
 
 boolean term,                  // true if the terminal is in human mode, false in machine mmode (not fully implemented)
         stopMove;              // Immediately stop motor movements (E-Stop)
@@ -711,10 +728,12 @@ byte    sc,                    // counter for displaying debugging info about th
         menuItem,              // Menu item currently being set by the user
         alarm,                 // 0 normal, else alarm number
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
+
 #ifdef isKeyboard        
 byte    keys[maxBtn],          // Debounced keyboard keys
         kcnt[maxBtn],          // Keyboard debounce counter
         mkeys[maxBtn];         // Key memory (allows to detect button transitions)
+int     okDelay;               // Delayed action for stopping the ventilator 
 #ifdef analogKeyboard
 int    analogKeys;            // Buffered analog value for keyboard
 #endif
@@ -912,13 +931,23 @@ void debounceKeyboard()
  uint16_t m=1;
  while (c--)  //Keyboard debounce
   {
-   if (m & b)
-     {if (kcnt[c]>debounce) keys[c]=true; else kcnt[c]++;}
+   if (m & b) // raw key pressed
+     {if (kcnt[c]>debounce) keys[c]=true; if(kcnt[c]<keyRpt1) kcnt[c]++;}  
     else
-     {if (kcnt[c]==0) keys[c]=false; else kcnt[c]--;}
+     {if (kcnt[c]==0) keys[c]=false; else if (kcnt[c]>debounce) kcnt[c]=debounce; else kcnt[c]--;}
    m+=m; 
   }
 }
+
+void repeatCheck(byte k)  // if the repeat delay for the button is elapsed, clear memory (simulate new press)
+{
+ if(kcnt[k]==keyRpt1)
+  {
+   kcnt[k]-=keyRpt; 
+   mkeys[k]=false; 
+  }
+}  
+
 #endif
 
 #ifdef Beeper
@@ -1105,12 +1134,11 @@ active=true;
         else Serial.println(F("Out of range (6-40BPM)"));  
 #endif
     break;
-    case 'V': // V set Volume (in liters)
-     r=r*1000;
+    case 'V': // V set Volume (in ml)
      if (ok=((r>=minVolume) && (r<=maxVolume)))
       {reqVolume=r; prstat();}
 #ifdef serialVerbose
-      else Serial.println(F("Out of range (0.1-1.5l)"));  
+      else Serial.println(F("Out of range (100-800ml)"));  
 #endif
     break;
     case 'P': // P Set pressure (in KPa)
@@ -1118,7 +1146,7 @@ active=true;
      if (ok=((r>=minCompression) && (r<=maxCompression)))
       {reqCompression=r; prstat();} 
 #ifdef serialVerbose
-      else Serial.println(F("Out of range (1-20KPa)"));  
+      else Serial.println(F("Out of range (1-60 mm H2O)"));  
 #endif
     break;
     case 'E': // E set expiration ratio (x inspiration)
@@ -1170,8 +1198,8 @@ active=true;
                         "CV sets Constant Volume mode\n"
                         "CP sets Constant Pressure mode\n"
                         "S set Speed (in BPM)\n"
-                        "V set Volume (in liters)\n"
-                        "P set Pressure (in KPa)\n"
+                        "V set Volume (in ml)\n"
+                        "P set Pressure (in cm H2O)\n"
                         "E set expiration ratio (x inspiration)\n"
                         "Y set sYnc (in % of cycle)\n"
                         "M show Measurements from the sensor\n"
@@ -1255,7 +1283,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 1:
-     strcpy(disp,"Software V0.20");
+     strcpy(disp,"Software V0.21");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1264,13 +1292,14 @@ void displayMenu()
      strcat(disp,(dispParam==0)?"NO SENSOR":"UNKNOWN SENSOR");     
      dispPhase=10;
   case 100:
-     sprintf(disp,"S%02d V%d P%d \n",int(BPM),int(volume),int(compression/100));
+     sprintf(disp,"S%02d V%d P%d \n",int(BPM),int(volume),int(compression));
      dispDelay=100;  
      if (active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
     break;
   case 101:
      strcpy(disp,"\nSTART ");
      strcat(disp,(CVmode)?"VC":"PC");
+     if (syncRatio>0) strcat(disp,"+SV");
      dispPhase=(dispParam==0)?100:103;
      dispDelay=80;
     break;
@@ -1280,24 +1309,28 @@ void displayMenu()
      dispDelay=50;
     break;
   case 103:
-     sprintf(disp,"\nTEMP %dc   ",int(temperature)); 
+     sprintf(disp,"\nTEMP %dc     ",int(temperature)); 
      dispPhase++;
      dispDelay=80;
     break;
   case 104:
-     sprintf(disp,"\nHumi %d    ",int(humidity));    
+     sprintf(disp,"\nHumi %d RH   ",int(humidity));    
      dispPhase++;
     break;
   case 105:
-     sprintf(disp,"\nPRESS. %dRH ",int(relPressure/100));
+     sprintf(disp,"\nPRES. %d cmH2O",int(relPressure));
      dispPhase++;
     break;
   case 106:
-     sprintf(disp,"\nSYNC.  %d  ",int(syncRatio*100.1));
+     sprintf(disp,"\nSYNC.  %d    ",int(syncRatio*100.1));
      dispPhase++;
     break;
   case 107:
-     sprintf(disp,"\nRatio %d.%d  ",int(expirationRatio),int (expirationRatio*10) %10);
+     sprintf(disp,"\nRatio %d.%d    ",int(expirationRatio),int (expirationRatio*10) %10);
+     dispPhase++;
+    break;
+  case 108:
+     sprintf(disp,"\nAmb. Pres. %d",int(ambientPressure));
      dispPhase=100;
     break;
       
@@ -1310,7 +1343,7 @@ void displayMenu()
      dispDelay=60;  
     break;
   case 130:
-     sprintf(disp,"\nSET Press. %d",int(reqCompression/100));
+     sprintf(disp,"\nSET Press. %d",int(reqCompression));
      dispDelay=60;  
     break;
   case 140:
@@ -1319,7 +1352,7 @@ void displayMenu()
     break;
   case 150:
      dispTick++;
-     sprintf(disp,"\nSET Ex ratio %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
+     sprintf(disp,"\nSET In-Ex %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
      dispDelay=60;  
     break;
   case 160:
@@ -1362,7 +1395,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 5:
-     strcpy(disp,"SOFT 0.20");
+     strcpy(disp,"SOFT 0.21");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1411,7 +1444,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 105:
-     sprintf(disp,"PRESS. %dH",int(relPressure/100));
+     sprintf(disp,"PRESS. %d",int(relPressure));
      dispPhase++;
     break;
   case 106:
@@ -1420,6 +1453,10 @@ void displayMenu()
     break;
   case 107:
      sprintf(disp,"Ratio %d.%d",int(expirationRatio),int (expirationRatio*10) %10);
+     dispPhase++;
+    break;
+  case 108:
+     sprintf(disp,"Atm %d",int(ambientPressure));
      dispPhase=100;
     break;
       
@@ -1432,7 +1469,7 @@ void displayMenu()
      dispDelay=60;  
     break;
   case 130:
-     sprintf(disp,(dispTick++ & 1)?"SET   %d.%d":"PRESS. %d",int(reqCompression/100));
+     sprintf(disp,(dispTick++ & 1)?"SET   %d":"PRESS. %d",int(reqCompression));
      dispDelay=60;  
     break;
   case 140:
@@ -1544,6 +1581,7 @@ void readSensors() // Works no matter if sensor is present or not (returns defau
  BME280::PresUnit presUnit(BME280::PresUnit_Pa);
  I2CBusy=true;
  bme.read(pres, temp, hum, tempUnit, presUnit);
+ if (!isnan(pres)) pres=pres*PaToCmH2O; 
 #endif
 
 #ifdef BoschBMP180Sensor 
@@ -1580,6 +1618,8 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
     if (BMP180Phase)
      {     
       amb=bmp180.getPressure();
+      if (!isnan(amb)) amb=amb*PaToCmH2O; 
+      
       if (!isnan(amb) && (amb>minAtmosphericPressure) &&  (amb<maxAtmosphericPressure))
        {
 #ifdef debug_3
@@ -1766,19 +1806,53 @@ if (sensAmbientPressure=bmp180.begin())
 #endif
 }
 
+
+#ifdef I2CCheck
+void i2c_scanner() {    // This code is a copy of Arduino i2c_scanner example
+  int nDevices = 0;
+  Serial.println(F("Scanning I2C..."));
+  for (byte address = 1; address < 127; ++address) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    byte error = Wire.endTransmission();
+    if (error == 0) {
+      Serial.print(F("I2C device found at address 0x"));
+      if (address < 16) {
+        Serial.print("0");
+      }
+      Serial.print(address, HEX);
+      Serial.println("  !");
+      ++nDevices;
+    } else if (error == 4) {
+      Serial.print(F("Unknown error at address 0x"));
+      if (address < 16) {
+        Serial.print("0");
+      }
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0) Serial.println(F("No I2C devices found\n"));
+}
+#endif
+
 void setup() {
  // put your setup code here, to run once:
  timerLvl=0;
  Serial.begin(SERIAL_BAUD);
  while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
  term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator V 0.20"));
+ if (term) Serial.println(F("Open Source Ventilator V 0.21"));
 #ifdef jm_Wire
  twi_readFrom_wait = true; // twi_readFrom() waiting loop
  twi_writeTo_wait = true;  // twi_writeTo() waiting loop
 #endif 
 #ifdef I2C
  Wire.begin();
+#ifdef I2CCheck
+ i2c_scanner();  // checks for all devices on the bus
+#endif
 #endif
 #ifdef PCF8574LCDDisplay
  Wire.beginTransmission(0x27);     // I2C Address of the PCF8574 chip 
@@ -1792,6 +1866,9 @@ void setup() {
   }
    else 
     Serial.print(error);
+#endif
+#ifdef TM1638
+ tm.displayBegin(); // Please use Version 1.4 of the library (or commment out this line)
 #endif
  Timer1.initialize(200);  
  Timer1.attachInterrupt(Timer);
@@ -1859,7 +1936,13 @@ void pressOk()
  if (menuItem==0)
    {
     active=!active;  // Toggle function when "Enter" key pressed
-    if (!active) setDisplayMenu(Stop_message,std_dly,0);
+    if (!active) 
+     {
+      setDisplayMenu(Stop_message,std_dly,0);
+#ifdef Beeper
+      beep (200,3);
+#endif           
+     }
    }
   else
    {                 // Return to main screen when "Enter" key pressed
@@ -1877,8 +1960,20 @@ void pressOk()
 
 void pressPrevNext()
 {
- if ((keys[btnPrev]) && (menuItem>0)) {menuItem--;setDisplayMenu(Menu_message+10*menuItem,std_dly,0);}            // Previous menu item (no rollover)
- if ((keys[btnNext]) && (menuItem<MenuItems-1)) {menuItem++;setDisplayMenu(Menu_message+10*menuItem,std_dly,0);}  // Next menu item (no rollover) 
+ int n=0;
+ if (keys[btnPrev]) n=-1;
+ if (keys[btnNext]) n=1;
+ if (n) 
+  {
+   n+=(menuItem);
+   if (n<0) n=MenuItems-1;
+   if (n>=MenuItems)n=0;
+   menuItem=byte(n); 
+   setDisplayMenu(Menu_message+10*menuItem,std_dly,0);
+  }
+  
+// if (keys[btnPrev]) {menuItem=--menuItem % MenuItems;setDisplayMenu(Menu_message+10*menuItem,std_dly,0);}            // Previous menu item (no rollover)
+//  if ((keys[btnNext]) && (menuItem<MenuItems-1)) {menuItem++;setDisplayMenu(Menu_message+10*menuItem,std_dly,0);}  // Next menu item (no rollover) 
 }
 
 void pressUpDown()
@@ -1995,7 +2090,7 @@ void basicTelemetry(boolean b)
      sep();
      Serial.print(arduinoPlotterMotorOffset+stepper.targetPosition ());
      sep();
-     Serial.print(arduinoPlotterPressureOffset+relPressure*0.010197162129779282*10);
+     Serial.print(arduinoPlotterPressureOffset+relPressure*10);
 #else
       Serial.println("Time,Phase,Alarm,Motor pos,Pressure,Ambient press,Volume,Target,Breath lng,Breath in,Breath in speed,Breath in accel,Breath out,Breath out speed,Breath out accel"); 
      Serial.print(float(millis()-startActive)/1000);
@@ -2006,7 +2101,7 @@ void basicTelemetry(boolean b)
      sep();
      Serial.print(stepper.currentPosition());
      sep();
-     Serial.print(relPressure*0.010197162129779282);
+     Serial.print(relPressure);
 #endif
      if (b) Serial.println();
     }
@@ -2155,9 +2250,9 @@ void breathingInspiration ()
    if ((relPressure>compressionScale) && (breathPhase==1))  // Check for pressure
     {
      motorFastStop();
-#ifdef Beeper 
-      if (stepper.currentPosition ()<(motorTarget)*failVolumeRatio) beep(300,1); // Insufficient volume alarm
-#endif
+#ifdef ActiveBeeper     
+     if (stepper.currentPosition ()<(motorTarget)*failVolumeRatio) beep(300,1); // Insufficient volume alarm
+#endif        
     }
   }
 }
@@ -2265,7 +2360,22 @@ void loop() {
 #endif      
 #ifdef isKeyboard      
     // Keyboard actions
-    if (keys[btnOk]   && !mkeys[btnOk])   pressOk();        // Ok button
+    repeatCheck(btnDn);
+    repeatCheck(btnUp);
+    if (keys[btnOk])
+     {
+      if ((menuItem==0) && active)  // stop request, add delay
+       {
+        if (okDelay==okLong) pressOk();        // Ok button
+        if (okDelay<=okLong) okDelay++;
+       }
+      else
+       {
+        if (!mkeys[btnOk])   pressOk();        // Ok button
+        okDelay=0; 
+       }
+     } else okDelay=0;
+    
     if (keys[btnPrev] && !mkeys[btnPrev]) pressPrevNext();  // previous item button
     if (keys[btnNext] && !mkeys[btnNext]) pressPrevNext();  // next item button
     if (keys[btnDn]   && !mkeys[btnDn])   pressUpDown();    // lower value button
