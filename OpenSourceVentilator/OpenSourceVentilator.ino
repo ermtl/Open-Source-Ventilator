@@ -759,7 +759,7 @@ byte    sc,                    // counter for displaying debugging info about th
         barGraph,              // segments of the pressure bar graph
         bargraphDot,           // rate indicator blinking segment on the bargraph
         menuItem,              // Menu item currently being set by the user
-        alarm,                 // 0 normal, else alarm number
+        alarmNum,               // 0 normal, else alarm number
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
 uint16_t mBargraph;            // previous display on the bargraph
  
@@ -1043,7 +1043,7 @@ void   analogReadKeys()
 #ifdef Beeper
 void beep(int lng,byte err)  // Launch a beep sound
 {
- if (err) alarm=err; 
+ if (err) alarmNum=err; 
  pinMode(pin_Beep, OUTPUT); 
  if (lng) digitalWrite(pin_Beep, LOW);  // active (inverted)
  beepCnt=max(beepCnt,lng);              //  if overlapping sounds, use the longest of them 
@@ -1655,7 +1655,7 @@ void Timer()
      if (beepCnt==1)
       {
         digitalWrite(pin_Beep, HIGH);  // inactive (inverted)
-        alarm=0;
+        alarmNum=0;
       }
      if (beepCnt) beepCnt--;
      break;
@@ -2163,7 +2163,7 @@ void basicTelemetry(boolean b)
      //sep();
      Serial.print(breathPhase*50);
      sep();
-     Serial.print(alarm*20);
+     Serial.print(alarmNum*20);
      sep();
      Serial.print(arduinoPlotterMotorOffset+stepper.currentPosition());
      sep();
@@ -2176,7 +2176,7 @@ void basicTelemetry(boolean b)
      sep();
      Serial.print(breathPhase);
      sep();
-     Serial.print(alarm);
+     Serial.print(alarmNum);
      sep();
      Serial.print(stepper.currentPosition());
      sep();
