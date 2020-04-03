@@ -162,6 +162,17 @@
          - The data dispay includes ambiant pressure (can be used to check negative pressure rooms)
          - It now uses the updated TM1638 library (Version 1.4+), you need to update or you'll have a compile error.
          - #define I2CCheck : displays a list of the I2C devices found upon startup (only for debug or for external HMI)
+
+    0.22 Misc. changes
+
+         - PEEP parameter added
+         - Apnea alarm parameter added
+         - Display PIP and PEEP in real time (in progress)
+         - The bargraph (pressure in VC mode, volume in PC mode) is now displayed on the LCD
+         - New automatic motor speed limit to prevent interrupt overflow (interrupt limited reentrancy)
+         - reorganisation of items stored in EEPROM. They are now included in a struct and their name starts with ee.
+           This will allow easy expansion of the variables stored in EEPROM and the way to treat them as a whole.
+         
          
 
     GPL V3 Licence
@@ -201,38 +212,43 @@
        with an infant to prevent damaging their lungs with an adult setting.
 */
 
-#define minBPM                     10.0   // minimum respiratory speed
-#define defaultBPM                 20.0   // default respiratory speed
-#define stepBPM                     1.0   // adjustment step for respiratory speed
-#define maxBPM                     35.0   // maximum respiratory speed
-#define maxBPMchange                0.2   // maximum respiratory speed change in proportion of final value per beat (1=100%)
-#define minVolume                 100.0   // minimum respiratory volume in milliliters 
-#define defaultVolume             400.0   // default respiratory volume in milliliters 
-#define stepVolume                 20.0   // adjustment step for respiratory volume in milliliters 
-#define maxVolume                 800.0   // maximum respiratory volume in milliliters 
-#define maxVolumeChange             0.25  // maximum respiratory volume change in proportion of final value per beat (1=100%) 
-#define minCompression             10.00  // minimum compression for the ambu-bag in cm H2O
-#define stepCompression             5.00  // adjustment step for compression for the ambu-bag in cm H2O
-#define defaultCompression         20.00  // default compression for the ambu-bag in cm H2O
-#define maxCompression             60.00  // maximum compression for the ambu-bag in cm H2O
-#define maxCompressionChange        0.5   // maximum compression for the ambu-bag change in proportion of final value per beat (1=100%)
-#define minSyncRatio                0.00  // minimum portion of the cycle for breath synchronisation
-#define stepSyncRatio               0.05  // adjustment step for portion of the cycle for breath synchronisation
-#define defaultSyncRatio            0.15  // default portion of the cycle for breath synchronisation
-#define maxSyncRatio                0.40  // maximum portion of the cycle for breath synchronisation
+#define minBPM                     10     // minimum respiratory speed
+#define defaultBPM                 20     // default respiratory speed
+#define stepBPM                     1     // adjustment step for respiratory speed
+#define maxBPM                     35     // maximum respiratory speed
+#define minVolume                 100     // minimum respiratory volume in milliliters 
+#define defaultVolume             400     // default respiratory volume in milliliters 
+#define stepVolume                 20     // adjustment step for respiratory volume in milliliters 
+#define maxVolume                 800     // maximum respiratory volume in milliliters 
+#define minCompression             10     // minimum compression for the ambu-bag in cm H2O
+#define stepCompression             2     // adjustment step for compression for the ambu-bag in cm H2O
+#define defaultCompression         20     // default compression for the ambu-bag in cm H2O
+#define maxCompression             60     // maximum compression for the ambu-bag in cm H2O
+#define minPEEPCompression          0     // minimum post expiration compression for the ambu-bag in cm H2O
+#define stepPEEPCompression         1     // adjustment step for post expiration compression for the ambu-bag in cm H2O
+#define defaultPEEPCompression      4     // default post expiration compression for the ambu-bag in cm H2O
+#define maxPEEPCompression         20     // maximum post expiration compression for the ambu-bag in cm H2O
+#define minApnea                    0     // minimum value (no detection, no alarm)
+#define stepApnea                   1     // adjustment step for apnea alarm (in breathing cycles)
+#define defaultApnea                2     // default apnea alarm
+#define maxApnea                    6     // maximum apnea alarm
+
+#define minsyncRatio                0.0   // minimum portion of the cycle for breath synchronisation
+#define stepsyncRatio               0.05  // adjustment step for portion of the cycle for breath synchronisation
+#define defaultsyncRatio            0.15  // default portion of the cycle for breath synchronisation
+#define maxsyncRatio                0.50  // maximum portion of the cycle for breath synchronisation
 #define minExpirationRatio          1.00  // minimum portion of the cycle for breath synchronisation
 #define stepExpirationRatio         0.2   // adjustment step for portion of the cycle for breath synchronisation
 #define defaultExpirationRatio      1.2   // default portion of the cycle for breath synchronisation
 #define maxExpirationRatio          3.00  // maximum portion of the cycle for breath synchronisation
 #define failVolumeRatio             0.90  // In CP mode, Alarm if pressure reached before that portion of programmed volume.
-
-
+#define defaultCVMode               true  // CV mode by default 
 
 #define ambientPressureFilter       0.02  // IIR filtering ratio (lower value produce longer time constant)
 #define avgPressureFilter           0.1   // IIR filtering ratio (lower value produce longer time constant)
 #define defaultPressure          1033.22  // Pressure in cm H2O returned when no sensor is found (1 atm)
 #define defaultAmbientPressure   1033.22  // assumed ambient pressure in cm H2O returned when no sensor is found (1 atm)
-#define defaultHumidity            50.00  // humidity in % RH returned when no sensor is found
+#define defaultHumidity            50     // humidity in % RH returned when no sensor is found
 #define defaultTemperature         20.00  // temperature in °C returned when no sensor is found
 #define alarmCompressionValue       1.1   // if the pressure exceeds the presed value * alarmCompressionValue, 
                                           // then trigger an alarm and stop the motor if needed  
@@ -255,6 +271,7 @@
 #define motorSpeed               5000     // Speed for 1 liter/second
 #define motorAcceleration        8500     // Acceleration for 1 liter / second (inverse square of flow)
 #define motorMaxAcceleration    30000     // deceleration when pressure limit reached
+#define motorMaxSpeed            4000     // Max steps per second. 
 #define motorVolumeRatio            0.8   // Ratio of distance in steps to air volume in step per milliliter.
                                           
 
@@ -274,15 +291,18 @@
 
 #define analogKeyboard
 
+
+#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
+
+#define PCF8574LCDbargraph // Use a 2x16 characters LCD with a PCF8574 'backpack' for the Led pressure bargraph
+
 //#define TM1638Keyboard     // Use a TM1638 for the keyboard
 
 //#define TM1638Display      // Use a TM1638 for the display
 
-#define PCF8574LCDDisplay  // Use a 2x16 characters LCD with a PCF8574 'backpack' as a display
+//#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
 
-#define TM1638bargraph     // Use a TM1638 for the Led pressure bargraph
-
-#define ActiveBeeper       // Active beeper can be used on any pin. Passive beeper will require a PWM capable pin
+#define activeBeeper       // active beeper can be used on any pin. Passive beeper will require a PWM capable pin
 
 #define Led                // Led debugging / Signal (should be disabled if SPI peripherals are present)
 
@@ -309,6 +329,7 @@
 #define serialTelemetry    // Sends real time data about time, current breathing phase, motor position, pressure 
                            // while the machine works in CSV format
 
+#define eepromVersion  100 // version 1.00 of the eeprom data structure
 
 //************************************   DEBUGGING   *************************************
 
@@ -318,11 +339,13 @@
 // #define debug_3      // print sensor datadata 
 // #define debug_4      // temperature / humidity / pressure 
 
-//#define debugAnalogKeyboard
-#define I2CCheck        // does an I2C bus scan and reports valid addresses. 
-#define ArduinoPlotter  // This will turn on telemetry automatically
-                        // With this feature on, absolute pressure and motor speeds are scaled.  
-
+//#define debugAnalogKeyboard   // Display the actual ADC value for the various keys
+//#define I2CCheck              // does an I2C bus scan and reports valid addresses. 
+#define debugLed              // Interrupt routine debugging
+#define ArduinoPlotter        // This will turn on telemetry automatically
+                              // With this feature on, absolute pressure and motor speeds are scaled.  
+#define debugShortEnter       // When stopping the ventilator, Enter needs to be pressed 2 seconds
+                              // and an alarm is sounded. Defining debugShortEnter removes it during debugging
 
 //******************************   IMPLIED DEFINITIONS  ********************************
 
@@ -369,8 +392,11 @@
 #define dispBargraph  // Alternate physical (LED) bargraphs must also enable this
 #endif
 
+#ifdef  PCF8574LCDbargraph
+#define dispBargraph  // Alternate physical (LED) bargraphs must also enable this
+#endif
 
-#ifdef  ActiveBeeper
+#ifdef  activeBeeper
 #define Beeper
 #endif
 
@@ -479,7 +505,7 @@
 
        
 #ifdef I2C
-// #define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
+#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
 #ifdef jm_Wire
 #include <jm_Wire.h>              // I2C protocol, contains a workaround for a longstanding issue with the Wire library
                                   // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
@@ -558,9 +584,13 @@ const int KbdTols[] = {17,26,39,47,52};
 #endif
 
 #ifdef isKeyboard
-#define keyRpt1 100  // Number of ticks before first key repeat
+#define keyRpt1  60  // Number of ticks before first key repeat
 #define keyRpt   30  // Number of ticks between subsequent key repeats
-#define okLong  150  // around 3 seconds 
+#ifdef debugShortEnter
+#define okLong   30  // short value while debugging (at least keyRpt)
+#else
+#define okLong  120  // around 2.5 seconds 
+#endif
 #endif
 
 
@@ -633,7 +663,7 @@ extern bool twi_writeTo_wait;         // Must be set to true to activate the tim
 
 #define std_dly 70  // display standard delay
 
-// #define sweep
+
 
 //#define serialVerbose   // Should the messages sent to the serial port be verbose or not
 
@@ -648,10 +678,12 @@ extern bool twi_writeTo_wait;         // Must be set to true to activate the tim
 #define Measurement_Start   101    // Screen with "start" message
 #define Stop_message        102    // stop indicator screen  
 #define Measurement_Message 103    // first of measurement messages
+#define  PIP_PEEP            99    // Display current values for PIP and PEEP
 
-#define MenuItems         7
-#define keyIdleReturn 16000    // returns to main menu after 16 seconds without key press
-#define motorOffDelay 10000    // Motor is cut off after that time being inactive.
+#define MenuItems             9
+#define keyIdleReturn     16000    // returns to main menu after 16 seconds without key press
+#define motorOffDelay     10000    // Motor is cut off after that time being inactive.
+#define interruptMaxNest      4    // delay steps to prevent a stack runaway
 
 #define PaToCmH2O 0.010197162129779282 // Conversion coefficient
 
@@ -674,11 +706,8 @@ boolean doDisp,                // indicates if a display update is required or n
         sensPressure,          // True if a pressure sensor is present, false otherwise
         sensAmbientPressure,   // True if a separate ambient pressure sensor is present, false otherwise
         sensFlow,              // True if an airflow sensor is present, false otherwise (not used yet)
-        allSet,                // True if all actual values match the programed values, false when ramping values up or down
-        active,                // True if the machine is currently doing breathing cycles, false otherwise
         Mactive,               // active memory (transition detection  
         motorState,            // True if the motor is activated, false otherwise, false otherwise
-        CVmode,                // CV or CP mode indicator; 
 #ifdef  watchdogProtect        
         watchdogStarted,       // True when the watchdog has been activated. the first few seconds after reset are without watchdog protection
 #endif        
@@ -689,15 +718,13 @@ boolean doDisp,                // indicates if a display update is required or n
 #ifdef dispMenus     // Alternate displays must also enable this
 char    disp[dispBufferLength];// Display data buffer
 #endif        
-float   ambientPressure,       // Calculated ambient air pressure (averaged)
-        pressure,              // Current pressure, as read from the sensor
+float   pressure,              // Current pressure, as read from the sensor
         peakPressure,          // high pass filtered value of the pressure. Used to detect patient initiated breathing cycles
         avgPressure,           // Averaged pressure (used to limit the motor speed with short spikes filtered out
         relPressure,           // relative pressure (measured pressure - ambient pressure)
         presM1,presM2,         // Memoies used to extrapolate pressure values when a new sensor measurement is not available
         temperature,           // temperature as read by the sensor, in Celsius
         temperature2,          // temperature as read by the 2nd sensor, in Celsius (if available)
-        humidity,              // humidity as read by the sensor, in % RH
         breathInSpeed,         // Speed of the breath inhalation in liter / second
         breathInAcceleration,  // Acceleration in step squared/second      
         breathOutSpeed,        // speed of the breath exhalation in liter / second
@@ -705,20 +732,26 @@ float   ambientPressure,       // Calculated ambient air pressure (averaged)
 long    tick,                  // counter used to trigger sensor measurements
         breathe,               // counter used to track the current breathing cycle
         lastKey,               // last time when a key was pressed (used to automatically return to the main menu) 
+        lastValChange,         // Last time the PIP or PEEP changed (used for display)
         commTime,              // Last time a serial communication was received
-        lastActive,            // Last time the motor was active
-        startActive,           // last time the motor was started
+        lastactive,            // Last time the motor was active
+        startactive,           // last time the motor was started
         lastAmbientPressure,   // last time a valid ambient pressure was collected
         breathLength,          // duration of the current breathing cycle in milliseconds. This is 60000/BPM.
         breathTime,            // Length of cycle minus the sync period
         breathIn,              // Length of the breath inhalation
-        breathOut,             // Length of the breath exhalation
-        motorTarget,           // Exprected motor position at the end of the cycle
-        PIP,                   // Peak pressure
-        PEEP;                  // End of cycle pressure 
-float   BPM,                   // beats Per Minute. This is the minimum breathing rate, as defined by the user
+        breathOut;             // Length of the breath exhalation
+int     motorTarget,           // Exprected motor position at the end of the cycle
+        pipValue,              // Peak pressure
+        peepValue,             // End of cycle pressure 
+        displayPip,            // Peak pressure
+        displayPeep,           // End of cycle pressure 
         volume,                // Breathing volume per cycle in ml
         compression,           // Max / target compression while inhaling
+        humidity,              // humidity as read by the sensor, in % RH
+        BPM;                   // beats Per Minute. This is the minimum breathing rate, as defined by the user        
+float   
+        
         compressionScale,      // Scale of the compression relative to set value
         volumeScale;           // Scale of the volume relative to set value
 byte    sc,                    // counter for displaying debugging info about the sensors 
@@ -728,7 +761,8 @@ byte    sc,                    // counter for displaying debugging info about th
         menuItem,              // Menu item currently being set by the user
         alarm,                 // 0 normal, else alarm number
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
-
+uint16_t mBargraph;            // previous display on the bargraph
+ 
 #ifdef isKeyboard        
 byte    keys[maxBtn],          // Debounced keyboard keys
         kcnt[maxBtn],          // Keyboard debounce counter
@@ -741,11 +775,24 @@ int    analogKeys;            // Buffered analog value for keyboard
 
 // Parameters saved to / recovered from EEPROM
 
-float   reqBPM;                // respiratory frequency
-float   reqVolume;             // respiratory volume in milliliters 
-float   reqCompression;        // compression for the ambu-bag in Pa
-float   syncRatio;             // portion of the cycle for breath synchronisation
-float   expirationRatio;       // The proportion of each breathing cycle that is spent breathing in compared to breathing out
+
+typedef struct
+  {
+   int     eeVersion;              // version of the data (allows resetting if incompatible software is uploaded 
+   int     reqBPM;                // respiratory frequency
+   int     reqVolume;             // respiratory volume in milliliters 
+   int     reqCompression;        // compression for the ambu-bag in cm H2O
+   float   syncRatio;             // portion of the cycle for breath synchronisation
+   float   expirationRatio;       // The proportion of each breathing cycle that is spent breathing in compared to breathing out
+   boolean CVmode;                // CV or CP mode indicator; 
+   boolean active;                // True if the machine is currently doing breathing cycles, false otherwise
+   float   ambientPressure;       // Calculated ambient air pressure (averaged)
+   int     peep;                  // Minimum post expiratory pressure (PEEP)
+   byte    apnea;                 // Apnea detector (0 = off, 1 to 6)
+  } EEPROM_Data;
+
+
+EEPROM_Data ee;
 
 #ifdef  CurrentSense
 int     currentVal;            // ADC result of the current measurement
@@ -771,21 +818,26 @@ void  __attribute__ ((noinline)) sep ()
 
 boolean checkValues()
 {
- boolean isOk=(reqBPM>=minBPM);                      // BPM in allowed range ?
- if (reqBPM>maxBPM) isOk=false;                 
- if (reqVolume<minVolume) isOk=false;                // Volume in allowed range ?
- if (reqVolume>maxVolume) isOk=false;           
- if (reqCompression<minCompression) isOk=false;      // Compression in allowed range ?
- if (reqCompression>maxCompression) isOk=false; 
- if (syncRatio<minSyncRatio) isOk=false;             // portion of the cycle for breath synchronisation in allowed range ?
- if (syncRatio>maxSyncRatio) isOk=false;
- if (expirationRatio<minExpirationRatio) isOk=false; // portion of the cycle for breath synchronisation in allowed range ?
- if (expirationRatio>maxExpirationRatio) isOk=false;
- if (isnan(reqBPM)) isOk=false;                      // Check for malformed floating point values (NaN)
- if (isnan(reqVolume)) isOk=false;  
- if (isnan(reqCompression)) isOk=false;  
- if (isnan(syncRatio)) isOk=false;  
- if (isnan(expirationRatio)) isOk=false;  
+ boolean isOk=(ee.reqBPM>=minBPM);                      // BPM in allowed range ?
+ if (ee.reqBPM>maxBPM) isOk=false;                 
+ if (ee.reqVolume<minVolume) isOk=false;                // Volume in allowed range ?
+ if (ee.reqVolume>maxVolume) isOk=false;           
+ if (ee.reqCompression<minCompression) isOk=false;      // Compression in allowed range ?
+ if (ee.reqCompression>maxCompression) isOk=false; 
+ if (ee.peep<minPEEPCompression) isOk=false;            // Post expiratory compression in allowed range ?
+ if (ee.peep>maxPEEPCompression) isOk=false; 
+ if (ee.syncRatio<minsyncRatio) isOk=false;             // portion of the cycle for breath synchronisation in allowed range ?
+ if (ee.syncRatio>maxsyncRatio) isOk=false;
+ if (ee.expirationRatio<minExpirationRatio) isOk=false; // portion of the cycle for breath synchronisation in allowed range ?
+ if (ee.expirationRatio>maxExpirationRatio) isOk=false;
+ if (ee.ambientPressure<minAtmosphericPressure) isOk=false; // Ambiant pressure in allowed range ?
+ if (ee.ambientPressure>maxAtmosphericPressure) isOk=false;
+ if (ee.apnea<minApnea) isOk=false;                         // Apnea alarm in allowed range ?
+ if (ee.apnea>maxApnea) isOk=false;
+ if (ee.eeVersion!=eepromVersion) isOk=false;               // Error if not the right EEPROM data version
+ if (isnan(ee.syncRatio)) isOk=false;                       // Check for malformed floating point values (NaN)
+ if (isnan(ee.expirationRatio)) isOk=false;  
+ if (isnan(ee.ambientPressure)) isOk=false;  
  return isOk;     
 }
 
@@ -799,7 +851,7 @@ void meas()
  Serial.print(F("% RH\tPressure:")); 
  Serial.print(pressure);
  Serial.print(F(" Pa\tAmbient Pressure:")); 
- Serial.print(ambientPressure);
+ Serial.print(ee.ambientPressure);
  Serial.print(F(" Pa\tRelative Pressure:")); 
  Serial.print(relPressure);
  Serial.println(F(" Pa"));  
@@ -810,7 +862,7 @@ void meas()
  tab();
  Serial.print(pressure);
  tab();
- Serial.print(ambientPressure);
+ Serial.print(ee.ambientPressure);
  tab();
  Serial.println(relPressure);
 #endif 
@@ -833,8 +885,29 @@ void setDisplayMenu(int ph, int dly=std_dly, int param=0)
 
 void displayBargraph (uint16_t value)
 {
+ if (value!=mBargraph) // don't overwrite if same value
+  { 
+    mBargraph=value;
 // add alternate ways of displaying the bargraph here
-  
+
+#ifdef PCF8574LCDbargraph // Dynamically redefine the bargraph
+
+#define bar 30
+int defchar[8];
+    memset(defchar,0,sizeof(defchar));
+    if (value & 128) defchar[1]=bar;
+    if (value & 64) defchar[3]=bar;
+    if (value & 32) defchar[5]=bar;
+    if (value & 16) defchar[7]=bar;
+    lcd.createChar(1, (int*)defchar);
+    memset(defchar,0,sizeof(defchar));
+    if (value & 8) defchar[0]=bar;
+    if (value & 4) defchar[2]=bar;
+    if (value & 2) defchar[4]=bar;
+    if (value & 1) defchar[6]=bar;
+    lcd.createChar(2, (int*)defchar);
+#endif  
+
 #ifdef TM1638bargraph
   
   for (uint8_t position = 0; position < 8; position++)
@@ -843,11 +916,13 @@ void displayBargraph (uint16_t value)
     value = value >> 1;
    }
 #endif  
+  }
 }
+
 
 void updateBargraph()
 {
- if (CVmode)  // CV Mode - bargraph needs to show compression
+ if (ee.CVmode)  // CV Mode - bargraph needs to show compression
   {
    bargraphDot=4;
    byte b=1*(relPressure<-0.2*compressionScale)+2*(relPressure<-0.1*compressionScale)+4+  // Calculate the bargraph content from the pressure
@@ -859,7 +934,7 @@ void updateBargraph()
   {           // CP Mode - bargraph needs to show volume 
    bargraphDot=1;
    float vol=stepper.currentPosition()/motorVolumeRatio;
-   int c=int ((7*vol)/volumeScale+1); // Always make sure at least the leftmost position is active
+   int c=int ((8*vol)/volumeScale+1); // Always make sure at least the leftmost position is active
    barGraph=0;
    while (c--) barGraph+=barGraph+1;
   }
@@ -878,13 +953,15 @@ void doDisplay()
  disp[38]=0;   // Safety
  if (n!=1)
   {
-    lcd.clear();
-    lcd.setCursor(1, 0);
+    // lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(char(1));
     lcd.print(disp);
   }
  if (n>=0)
   {
-   lcd.setCursor(1,1);
+   lcd.setCursor(0,1);
+    lcd.print(char(2));
    lcd.print(&disp[n]);  
   }
 #endif
@@ -905,7 +982,6 @@ void doDisplay()
  * ading another kind of keyboard should be done here 
  *
  */
-
 
 uint16_t readKeyboard()  
 {
@@ -948,6 +1024,20 @@ void repeatCheck(byte k)  // if the repeat delay for the button is elapsed, clea
   }
 }  
 
+#ifdef analogKeyboard
+void   analogReadKeys()
+{
+   analogKeys=analogRead(pin_analogKeyboard);            // Buffered analog value for keyboard
+#ifdef debugAnalogKeyboard
+   Serial.print(F("Analog Key Value: "));
+   Serial.print(analogKeys); 
+   Serial.print(F("\t Tolerance (5%): "));
+   Serial.println(int(float(analogKeys) / 20)+1); 
+   analogKeys=0;  // Does not transmit keys when debugging the analog values.
+#endif
+}
+#endif
+
 #endif
 
 #ifdef Beeper
@@ -960,92 +1050,61 @@ void beep(int lng,byte err)  // Launch a beep sound
 }
 #endif
 
-
-typedef struct
-  {
-   float reqBPM,reqVolume,reqCompression,syncRatio,expirationRatio;
-   boolean cvMode,active;
-   int ambientPressure;
-  } EEPROM_Data;
-
 #ifdef E2PROM
 void eeput (int n)  // records to EEPROM (only if values are validated)
 {
  int eeAddress = eeStart;
  boolean isOk=checkValues();
-    
+ ee.eeVersion=eepromVersion;               // Write the EEPROM data version
+
  if (n==1) isOk=true;  // override (for debug testing)
  if (isOk)
   {
-   EEPROM.put(eeAddress, reqBPM);
-   eeAddress += sizeof(float);
-   EEPROM.put(eeAddress, reqVolume);
-   eeAddress += sizeof(float);
-   EEPROM.put(eeAddress, reqCompression);
-   eeAddress += sizeof(float);
-   byte b=(active)?1:0;
-   EEPROM.put(eeAddress, b);
-   eeAddress += sizeof(byte);
-   EEPROM.put(eeAddress, syncRatio);
-   eeAddress += sizeof(float);
-   EEPROM.put(eeAddress, expirationRatio);
-   eeAddress += sizeof(float);
-   b=(CVmode)?1:0;
-   EEPROM.put(eeAddress, b);
-   eeAddress += sizeof(byte);
+   EEPROM.put(eeAddress, ee);
+   eeAddress += sizeof(EEPROM_Data);
   }
 }    
 #endif
+
 
 void eeget ()
 {    
 #ifdef E2PROM
  int eeAddress = eeStart;
- byte tac,cvm;
 
- EEPROM.get(eeAddress, reqBPM);
- eeAddress += sizeof(float);
- EEPROM.get(eeAddress, reqVolume);
- eeAddress += sizeof(float);
- EEPROM.get(eeAddress, reqCompression);
- eeAddress += sizeof(float);
- EEPROM.get(eeAddress, tac);
- eeAddress += sizeof(byte);
- EEPROM.get(eeAddress, syncRatio);
- eeAddress += sizeof(float);
- EEPROM.get(eeAddress, expirationRatio);
- eeAddress += sizeof(float);
- EEPROM.get(eeAddress, cvm);
- eeAddress += sizeof(byte);
+ EEPROM.get(eeAddress, ee);
+ eeAddress += sizeof(EEPROM_Data);
  // Check if the data is coherent
  boolean isOk=checkValues();
- if (tac>1) isOk=false; // is the value 0 or 1 ?
- if (cvm>1) isOk=false; // is the value 0 or 1 ?
  if (!isOk) 
   {
-   reqBPM          = defaultBPM;
-   reqVolume       = defaultVolume;
-   reqCompression  = defaultCompression;
-   syncRatio       = defaultSyncRatio;
-   expirationRatio = defaultExpirationRatio;
-   tac=0;
-   cvm=1;
+   ee.reqBPM          = defaultBPM;
+   ee.reqVolume       = defaultVolume;
+   ee.reqCompression  = defaultCompression;
+   ee.peep            = defaultPEEPCompression;
+   ee.syncRatio       = defaultsyncRatio;
+   ee.expirationRatio = defaultExpirationRatio;
+   ee.CVmode          = defaultCVMode;
+   ee.active          = false;
+   ee.ambientPressure = defaultAmbientPressure;
+   ee.apnea           = defaultApnea;
   }
- active=(tac>0);  
- CVmode=(cvm>0);  
 #ifdef serialVerbose 
  if (term) Serial.println((isOk)?F("Read EEPROM Settings"):F("Read Default Settings"));
 #else
- if (term) Serial.println((isOk)?F("ROM"):F("Default"));
+ if (term) Serial.println((isOk)?F("EEPROM"):F("Default"));
 #endif 
 #else
- reqBPM          = defaultBPM;
- reqVolume       = defaultVolume;
- reqCompression  = defaultCompression;
- syncRatio       = defaultSyncRatio;
- expirationRatio = defaultExpirationRatio;
- active=false;
- CVmode=true;
+ ee.reqBPM          = defaultBPM;
+ ee.reqVolume       = defaultVolume;
+ ee.reqCompression  = defaultCompression;
+ ee.peep            = defaultPEEPCompression;
+ ee.syncRatio       = defaultsyncRatio;
+ ee.expirationRatio = defaultExpirationRatio;
+ ee.CVmode          = defaultCVMode;
+ ee.active          = false;
+ ee.ambientPressure = defaultAmbientPressure;
+ ee.apnea           = defaultApnea;
 #ifdef serialVerbose 
  if (term) Serial.print(F("Read Default Settings\n"));
 #endif 
@@ -1064,35 +1123,45 @@ void prstat()
 {
 #ifdef serialVerbose
  Serial.print  (F("\nPatient assisted breathing\tO"));
- Serial.println((active)?F("N"):F("ff"));
- Serial.print  ((CVmode)?F("CV"):F("CP"));
+ Serial.println((ee.active)?F("N"):F("ff"));
+ Serial.print  ((ee.CVmode)?F("CV"):F("CP"));
  Serial.print  (F(" mode\nVentilation speed\t\t"));
- Serial.print  (reqBPM);
+ Serial.print  (ee.reqBPM);
  Serial.print  (F(" cycles / minute\n"
                   "Ventilation volume\t\t"));
- Serial.print  (reqVolume/1000);
- Serial.print  (F(" liter\n"
+ Serial.print  (ee.reqVolume);
+ Serial.print  (F(" ml\n"
                   "Ventilation pressure\t\t"));
- Serial.print  (reqCompression/1000);
- Serial.print  (F(" KPa\n"
+ Serial.print  (ee.reqCompression);
+ Serial.print  (F(" cm H2O\n"
+                   "PEEP pressure\t\t"));
+ Serial.print  (ee.peep);
+ Serial.print  (F(" cm H2O\n"
                   "Patient synchonization\t\t"));
- Serial.print  (int(syncRatio*100.1));
+ Serial.print  (int(ee.syncRatio*100.1));
  Serial.print  (F(" % of cycle\n"
                 "Expiration ratio\t\t"));
- Serial.print  (expirationRatio);
- Serial.println(F(" x inspiration\n"));
+ Serial.print  (ee.expirationRatio);
+ Serial.print  (F(" x inspiration\n"
+                "Apnea Alarm\t\t"));
+ Serial.print  (ee.apnea);
+ Serial.println(F(" cycle(s)\n"));
 #else
- Serial.print ((active)?F("ON\t"):F("Off\t"));
- Serial.print  ((CVmode)?F("CV\t"):F("CP\t"));
- Serial.print  (reqBPM);
+ Serial.print  ((ee.active)?F("ON\t"):F("Off\t"));
+ Serial.print  ((ee.CVmode)?F("CV\t"):F("CP\t"));
+ Serial.print  (ee.reqBPM);
  tab();
- Serial.print  (reqVolume/1000);
+ Serial.print  (ee.reqVolume);
  tab();
- Serial.print  (reqCompression/1000);
+ Serial.print  (ee.reqCompression);
  tab();
- Serial.print  (int(syncRatio*100.1));
+ Serial.print  (ee.peep);
  tab();
- Serial.println  (expirationRatio);
+ Serial.print  (int(ee.syncRatio*100.1));
+ tab();
+ Serial.print  (ee.expirationRatio);
+ tab();
+ Serial.println (ee.apnea);
 #endif 
 }
 
@@ -1100,66 +1169,81 @@ void SerialCommand()
 {
   commTime=millis(); 
   float r;
+  int i;
   boolean ok=true;
   char ch=Buffer[1];
   char c=Buffer[0];
   Buffer[0]=32;
   r=Buffer.toFloat();
+  i=int(r);
   switch ( c)
    {
     case '1': // 1 Start assisted breathing
 #ifdef serialVerbose
      Serial.println(F("Breathing started"));
 #endif
-active=true;
+ee.active=true;
     break;
     case 'C': // CV / CP mode
-     if (ch=='V') CVmode=true; 
-     if (ch=='P') CVmode=false; 
+     if (ch=='V') ee.CVmode=true; 
+     if (ch=='P') ee.CVmode=false; 
 #ifdef serialVerbose
-     Serial.println((CVmode)?F("CV mode"):F("CP mode"));
+     Serial.println((ee.CVmode)?F("CV mode"):F("CP mode"));
 #endif
     break;
     case '0': // 0 Stop assisted breathing
-     active=false;
+     ee.active=false;
 #ifdef serialVerbose
      Serial.println(F("WARNING: Breathing stopped"));
 #endif
      setDisplayMenu(Stop_message,std_dly,0);
     break;
     case 'S': // S set Speed (in BPM)
-     if (ok=((r>=minBPM) && (r<=maxBPM)))
-      {reqBPM=r; prstat();} 
+     if (ok=((i>=minBPM) && (i<=maxBPM)))
+      {ee.reqBPM=i; prstat();} 
 #ifdef serialVerbose
-        else Serial.println(F("Out of range (6-40BPM)"));  
+        else Serial.println(F("Out of range (8-35BPM)"));  
 #endif
     break;
     case 'V': // V set Volume (in ml)
-     if (ok=((r>=minVolume) && (r<=maxVolume)))
-      {reqVolume=r; prstat();}
+     if (ok=((i>=minVolume) && (i<=maxVolume)))
+      {ee.reqVolume=i; prstat();}
 #ifdef serialVerbose
       else Serial.println(F("Out of range (100-800ml)"));  
 #endif
     break;
-    case 'P': // P Set pressure (in KPa)
-     r=r*1000;
-     if (ok=((r>=minCompression) && (r<=maxCompression)))
-      {reqCompression=r; prstat();} 
+    case 'P': // P Set pressure (in cm H2O)
+     if (ok=((i>=minCompression) && (i<=maxCompression)))
+      {ee.reqCompression=i; prstat();} 
 #ifdef serialVerbose
-      else Serial.println(F("Out of range (1-60 mm H2O)"));  
+      else Serial.println(F("Out of range (1-60 cm H2O)"));  
 #endif
     break;
-    case 'E': // E set expiration ratio (x inspiration)
+    case 'E': // E set PEEP (in cm H2O)
+     if (ok=((i>=minPEEPCompression) && (i<=maxPEEPCompression)))
+      {ee.peep=i; prstat();} 
+#ifdef serialVerbose
+      else Serial.println(F("Out of range (1-20 cm H2O)"));  
+#endif
+    break;
+    case 'A': // set Apnea alarm (in cycles)
+     if (ok=((i>=minApnea) && (i<=maxApnea)))
+      {ee.apnea=i; prstat();} 
+#ifdef serialVerbose
+      else Serial.println(F("Out of range (0 to 6)"));  
+#endif
+    break;
+    case 'X': // X set eXpiration ratio (x inspiration)
      if (ok=((r>=minExpirationRatio) && (r<=maxExpirationRatio)))
-      {expirationRatio=r; prstat();}
+      {ee.expirationRatio=r; prstat();}
 #ifdef serialVerbose
       else Serial.println(F("Out of range (1 to 3 x inspiration)"));  
 #endif
     break;
     case 'Y': // Y set sYnc (in % of cycle)
      r=r/100;
-     if (ok=((r>=minSyncRatio) && (r<=maxSyncRatio)))
-      {syncRatio=r; prstat();}
+     if (ok=((r>=minsyncRatio) && (r<=maxsyncRatio)))
+      {ee.syncRatio=r; prstat();}
 #ifdef serialVerbose
       else Serial.println(F("Out of range (0-40%)"));  
 #endif
@@ -1185,8 +1269,9 @@ active=true;
      debug=!debug;
     break;
     //case 'R': // R Reset
+    // if (ch=='S') { 
     // cli();
-    // resetFunction();
+    // resetFunction();}
     //break;
     case '?': // help
      if (term)
@@ -1200,7 +1285,9 @@ active=true;
                         "S set Speed (in BPM)\n"
                         "V set Volume (in ml)\n"
                         "P set Pressure (in cm H2O)\n"
-                        "E set expiration ratio (x inspiration)\n"
+                        "E set PEEP (in cm H2O)\n"
+                        "A set Apnea alarm (in cycles)\n"
+                        "X set eXpiration ratio (x inspiration)\n"
                         "Y set sYnc (in % of cycle)\n"
                         "M show Measurements from the sensor\n"
                         "T toggle Telemetry data on/off\n"
@@ -1211,12 +1298,12 @@ active=true;
                         //"R Reset\n"
                         "? print this\n" )); 
 #else
-       Serial.println(F("CMD: 0 1 CV CP S V P E Y M T"
+       Serial.println(F("CMD: 0 1 CV CP S V P X Y M T"
 #ifdef E2PROM
                         " W"
 #endif       
                         " D"
-                        //"R Reset\n"
+                        //"RS Reset\n"
                         " ?")); 
 #endif
 #endif
@@ -1271,6 +1358,7 @@ void SerialWait(int t)
  *   controller while preserving the navigation logic
  */
 
+
 #ifdef dispMenus
 void displayMenu()  
 {
@@ -1283,7 +1371,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 1:
-     strcpy(disp,"Software V0.21");
+     strcpy(disp,"Software V0.22\n             ");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1291,20 +1379,24 @@ void displayMenu()
      sprintf(disp, "ERROR %2d\n", dispParam);
      strcat(disp,(dispParam==0)?"NO SENSOR":"UNKNOWN SENSOR");     
      dispPhase=10;
+  case PIP_PEEP:
+     sprintf(disp,"\n PIP %d PEEP %d    ",displayPip,displayPeep);
+     dispDelay=10;  
+    break;
   case 100:
-     sprintf(disp,"S%02d V%d P%d \n",int(BPM),int(volume),int(compression));
+     sprintf(disp," S%02d V%d P%d    \n                ",BPM,volume,compression);
      dispDelay=100;  
-     if (active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
+     if (ee.active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
     break;
   case 101:
      strcpy(disp,"\nSTART ");
-     strcat(disp,(CVmode)?"VC":"PC");
-     if (syncRatio>0) strcat(disp,"+SV");
+     strcat(disp,(ee.CVmode)?"VC":"PC");
+     if (ee.syncRatio>0) strcat(disp,"+SV");
      dispPhase=(dispParam==0)?100:103;
      dispDelay=80;
     break;
   case 102:
-     strcpy(disp,"\nSTOP");
+     strcpy(disp,"\nSTOP        ");
      dispPhase=100;
      dispDelay=50;
     break;
@@ -1314,7 +1406,7 @@ void displayMenu()
      dispDelay=80;
     break;
   case 104:
-     sprintf(disp,"\nHumi %d RH   ",int(humidity));    
+     sprintf(disp,"\nHumi %d RH   ",humidity);    
      dispPhase++;
     break;
   case 105:
@@ -1322,40 +1414,47 @@ void displayMenu()
      dispPhase++;
     break;
   case 106:
-     sprintf(disp,"\nSYNC.  %d    ",int(syncRatio*100.1));
+     sprintf(disp,"\nSYNC.  %d    ",int(ee.syncRatio*100.1));
      dispPhase++;
     break;
   case 107:
-     sprintf(disp,"\nRatio %d.%d    ",int(expirationRatio),int (expirationRatio*10) %10);
+     sprintf(disp,"\nRatio %d.%d    ",int(ee.expirationRatio),int (ee.expirationRatio*10) %10);
      dispPhase++;
     break;
   case 108:
-     sprintf(disp,"\nAmb. Pres. %d",int(ambientPressure));
+     sprintf(disp,"\nAmb. Pres. %d",int(ee.ambientPressure));
      dispPhase=100;
     break;
-      
   case 110:
-     sprintf(disp,"\nSET Rate  %d  ",int(reqBPM));
+     sprintf(disp,"\nSET Rate  %d  ",ee.reqBPM);
      dispDelay=60;  
     break;
   case 120:
-     sprintf(disp,"\nSET Volume %d",int(reqVolume)); // character N looks better chan character M
+     sprintf(disp,"\nSET Volume %d  ",ee.reqVolume); // character N looks better chan character M
      dispDelay=60;  
     break;
   case 130:
-     sprintf(disp,"\nSET Press. %d",int(reqCompression));
+     sprintf(disp,"\nSET Press. %d  ",ee.reqCompression);
      dispDelay=60;  
     break;
   case 140:
-     sprintf(disp,"\nSET Sync. %2d    ",int(syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
+     sprintf(disp,"\nSET PEEP. %d  ",ee.peep);
      dispDelay=60;  
     break;
   case 150:
-     dispTick++;
-     sprintf(disp,"\nSET In-Ex %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
+     sprintf(disp,"\nSET Sync. %2d    ",int(ee.syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
      dispDelay=60;  
     break;
   case 160:
+     dispTick++;
+     sprintf(disp,"\nSET In-Ex %d.%d",int(ee.expirationRatio),int (ee.expirationRatio*10) %10); 
+     dispDelay=60;  
+    break;
+  case 170:
+     sprintf(disp,"\nSET Apnea. %d  ",ee.apnea);
+     dispDelay=60;  
+    break;
+  case 180:
      strcpy(disp,"\nSave Setup     ");
      dispDelay=60;  
     break;
@@ -1395,7 +1494,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 5:
-     strcpy(disp,"SOFT 0.21");
+     strcpy(disp,"SOFT 0.22");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1416,16 +1515,13 @@ void displayMenu()
      dispPhase=10;
     break;
   case 100:
-     if (compression<10000) 
-       sprintf(disp,"%02d %d.%d %d.%d",int(BPM),int(volume/1000),int (volume/100) %10,int(compression/1000),int (compression/100) %10);
-      else
-       sprintf(disp,"%02d %d.%d %d",int(BPM),int(volume/1000),int (volume/100) %10,int(compression/1000));
+      sprintf(disp,"%02d %d %d",BPM,volume,compression);
      dispDelay=100;  
-     if (active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
+     if (ee.active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
     break;
   case 101:
      strcpy(disp,"START  _");
-     disp[6]=(CVmode)?'V':'P';
+     disp[6]=(ee.CVmode)?'V':'P';
      dispPhase=(dispParam==0)?100:103;
      dispDelay=80;
     break;
@@ -1440,7 +1536,7 @@ void displayMenu()
      dispDelay=80;
     break;
   case 104:
-     sprintf(disp,"Huni%d",int(humidity));    // character N looks better chan character M
+     sprintf(disp,"Huni%d",humidity);    // character N looks better chan character M
      dispPhase++;
     break;
   case 105:
@@ -1448,40 +1544,48 @@ void displayMenu()
      dispPhase++;
     break;
   case 106:
-     sprintf(disp,"SYNC.  %d",int(syncRatio*100.1));
+     sprintf(disp,"SYNC.  %d",int(ee.syncRatio*100.1));
      dispPhase++;
     break;
   case 107:
-     sprintf(disp,"Ratio %d.%d",int(expirationRatio),int (expirationRatio*10) %10);
+     sprintf(disp,"Ratio %d.%d",int(ee.expirationRatio),int (ee.expirationRatio*10) %10);
      dispPhase++;
     break;
   case 108:
-     sprintf(disp,"Atm %d",int(ambientPressure));
+     sprintf(disp,"Atm %d",int(ee.ambientPressure));
      dispPhase=100;
     break;
       
   case 110:
-     sprintf(disp,(dispTick++ & 1)?"SET   %d":"RATE  %d",int(reqBPM));
+     sprintf(disp,(dispTick++ & 1)?"SET   %d":"RATE  %d",int(ee.reqBPM));
      dispDelay=60;  
     break;
   case 120:
-     sprintf(disp,(dispTick++ & 1)?"SET  %d":"VOL.  %d",int(reqVolume)); // character N looks better chan character M
+     sprintf(disp,(dispTick++ & 1)?"SET  %d":"VOL.  %d",int(ee.reqVolume)); // character N looks better chan character M
      dispDelay=60;  
     break;
   case 130:
-     sprintf(disp,(dispTick++ & 1)?"SET   %d":"PRESS. %d",int(reqCompression));
+     sprintf(disp,(dispTick++ & 1)?"SET   %d":"PRESS. %d",int(ee.reqCompression));
      dispDelay=60;  
     break;
   case 140:
-     sprintf(disp,(dispTick++ & 1)?"SET   %2d":"SYNC.  %2d",int(syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
+     sprintf(disp,(dispTick++ & 1)?"SET   %d":"PEEP. %d",int(ee.peep));
      dispDelay=60;  
     break;
   case 150:
-     dispTick++;
-     sprintf(disp,"\nSET EXP Ratio  %d.%d",int(expirationRatio),int (expirationRatio*10) %10); 
+     sprintf(disp,(dispTick++ & 1)?"SET   %2d":"SYNC.  %2d",int(ee.syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
      dispDelay=60;  
     break;
   case 160:
+     dispTick++;
+     sprintf(disp,"\nSET EXP Ratio  %d.%d",int(ee.expirationRatio),int (ee.expirationRatio*10) %10); 
+     dispDelay=60;  
+    break;
+  case 170:
+     sprintf(disp,(dispTick++ & 1)?"SET   %d":"APNEA %d",int(ee.apnea));
+     dispDelay=60;  
+    break;
+  case 180:
      strcpy(disp,(dispTick++ & 1)?"SETUP  _":"SAVE   _");
      dispDelay=60;  
     break;
@@ -1498,21 +1602,28 @@ void displayMenu()
 
 void Timer() 
 {
+#ifdef Led  
+#ifdef debugLed  
+ digitalWrite(pin_LED, HIGH);
+#endif
+#endif
  timerLvl++;  
- if (!stopMove) stepper.run();
+ if ((!stopMove) && (timerLvl<=interruptMaxNest)) stepper.run();
+#ifdef Led  
+#ifdef debugLed  
+ digitalWrite(pin_LED, LOW);
+#endif
+#endif
  if (timerLvl>1)  // only does the motor update if nested more than 1 level
   {
    timerLvl--; 
   }
   else
   {
-#ifdef Led  
-   digitalWrite(pin_LED, HIGH);
-#endif
    sei();                        // Critical : Allows nested interrupts
    switch (timCnt % 50) {        // 10 ms tick period for interface handling
 #ifdef dispMenus     
-    case 0:
+    case 5:
      if (--dispCnt<=0) displayMenu();
      break;
     case 10:                     // change the display
@@ -1528,20 +1639,25 @@ void Timer()
       }
      break;
 #endif     
+#ifdef dispBargraph 
+    case 15:                     // update the bargraph
+       if  (I2CBusy)
+         timCnt-=5;  // retry next time
+        else
+         {
+          displayBargraph((breathGraphCnt>0)?barGraph-bargraphDot:barGraph);
+          if (breathGraphCnt) breathGraphCnt--;
+         } 
+     break;
+#endif     
 #ifdef Beeper       
-    case 15:                     // update the beep
+    case 20:                     // update the beep
      if (beepCnt==1)
       {
         digitalWrite(pin_Beep, HIGH);  // inactive (inverted)
         alarm=0;
       }
      if (beepCnt) beepCnt--;
-     break;
-#endif     
-#ifdef dispBargraph 
-    case 20:                     // update the bargraph
-     displayBargraph((breathGraphCnt>0)?barGraph-bargraphDot:barGraph);
-     if (breathGraphCnt) breathGraphCnt--;
      break;
 #endif     
 #ifdef isKeyboard
@@ -1552,7 +1668,6 @@ void Timer()
     } 
    if (++timCnt>9999) timCnt=0;  // counts 0 to 9999
 #ifdef Led
-   digitalWrite(pin_LED, LOW);
 #endif
 #ifdef watchdog
    Watchdog.reset();
@@ -1625,7 +1740,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
 #ifdef debug_3
          Serial.print(amb);
 #endif       
-        IIRFilter(amb,ambientPressure,ambientPressureFilter);
+        IIRFilter(amb,ee.ambientPressure,ambientPressureFilter);
         // ambientPressure=(ambientPressure==0)?amb:ambientPressure*(1-ambientPressureFilter)+amb*ambientPressureFilter; // low pass filtering
         lastAmbientPressure=millis();
        }
@@ -1663,7 +1778,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
    tab();
    Serial.print(hum);
    tab();
-   Serial.println(ambientPressure);
+   Serial.println(ee.ambientPressure);
 #endif
 #ifdef tempSensor
   if (sensTemperature)
@@ -1676,7 +1791,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
 #ifdef humiditySensor
   if (sensHumidity)
    {
-    humidity=hum;
+    humidity=int(hum);
    }
   else
 #endif
@@ -1687,12 +1802,12 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
      pressure=pres;
 #ifdef TwoPressureSensors
      // approximate atmospheric pressure by averaging when the bag is filled and the machine does not run.
-     if ((stepper.currentPosition()==0) && !active && ((millis()>lastAmbientPressure+delayAmbientPressure) || !sensAmbientPressure))  
-      IIRFilter(pressure,ambientPressure,ambientPressureFilter);
+     if ((stepper.currentPosition()==0) && !ee.active && ((millis()>lastAmbientPressure+delayAmbientPressure) || !sensAmbientPressure))  
+      IIRFilter(pressure,ee.ambientPressure,ambientPressureFilter);
       //ambientPressure=(ambientPressure==0)?pressure:ambientPressure*(1-ambientPressureFilter)+pres*ambientPressureFilter; // low pass filtering
 #else
-     if ((stepper.currentPosition()==0) && !active)  // approximate athmospheric pressure by averaging when the bag is filled and the machine does not run.
-      IIRFilter(pressure,ambientPressure,ambientPressureFilter);
+     if ((stepper.currentPosition()==0) && !ee.active)  // approximate athmospheric pressure by averaging when the bag is filled and the machine does not run.
+      IIRFilter(pressure,ee.ambientPressure,ambientPressureFilter);
       //ambientPressure=(ambientPressure==0)?pressure:ambientPressure*(1-ambientPressureFilter)+pres*ambientPressureFilter; // low pass filtering
 #endif     
       IIRFilter(pressure,avgPressure,avgPressureFilter);
@@ -1703,10 +1818,10 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
 #endif
    {
     pressure=defaultPressure;
-    ambientPressure=defaultAmbientPressure;
+    ee.ambientPressure=defaultAmbientPressure;
    }
-  if (ambientPressure==0) ambientPressure=defaultAmbientPressure; 
-  relPressure=pressure-ambientPressure; 
+  if (ee.ambientPressure==0) ee.ambientPressure=defaultAmbientPressure; 
+  relPressure=pressure-ee.ambientPressure; 
  
 #ifdef debug_4
    Serial.print(pressure);
@@ -1715,7 +1830,7 @@ if ((sc % 8)==1)   // every 400 ms, launch a new measurement
    tab();
    Serial.print(humidity);
    tab();
-   Serial.println(ambientPressure);
+   Serial.println(ee.ambientPressure);
 #endif  
 #ifdef CurrentSense
  if (sensCurrent)
@@ -1843,7 +1958,7 @@ void setup() {
  Serial.begin(SERIAL_BAUD);
  while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
  term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator V 0.21"));
+ if (term) Serial.println(F("Open Source Ventilator V 0.22"));
 #ifdef jm_Wire
  twi_readFrom_wait = true; // twi_readFrom() waiting loop
  twi_writeTo_wait = true;  // twi_writeTo() waiting loop
@@ -1883,12 +1998,12 @@ void setup() {
  setDisplayMenu(startup_message); 
  
  pinMode(pin_Stepper_DIR, OUTPUT);
- digitalWrite(pin_Stepper_DIR, LOW);     // active (inverted)
+ digitalWrite(pin_Stepper_DIR, LOW);     // ee.active (inverted)
  pinMode(pin_Stepper_Step, OUTPUT);
- digitalWrite(pin_Stepper_Step, LOW);    // active (inverted)
+ digitalWrite(pin_Stepper_Step, LOW);    // ee.active (inverted)
 #ifdef disableMotorctrl
  pinMode(pin_Stepper_Disable, OUTPUT);
- digitalWrite(pin_Stepper_Disable, LOW);  // active (inverted)
+ digitalWrite(pin_Stepper_Disable, LOW);  // ee.active (inverted)
  motorState=true;
 #endif 
  detectSensors();
@@ -1898,9 +2013,9 @@ void setup() {
  SerialCommand();
  Buffer="";
 #endif 
- BPM=reqBPM;                 // Start from these values without sweep
- volume=reqVolume;
- compression=reqCompression;
+ BPM=ee.reqBPM;                 // Start from these values 
+ volume=ee.reqVolume;
+ compression=ee.reqCompression;
  readSensors();   
  tick=millis();
  breathLength=int(60000/BPM);
@@ -1914,19 +2029,8 @@ void setup() {
 #endif
 #ifdef ArduinoPlotter
  telemetry=true;
- active=true;
+ ee.active=true;
 #endif
-}
-
-
-
-void limitValues(float &B,float &V,float &C,float &D,float &E) // prevent values from going outside of their respective limits 
-{
- B = constrain(B, minBPM, maxBPM); 
- V = constrain(V, minVolume, maxVolume); 
- C = constrain(C, minCompression, maxCompression); 
- D = constrain(D, minSyncRatio, maxSyncRatio); 
- E = constrain(E, minExpirationRatio, maxExpirationRatio); 
 }
 
 #ifdef isKeyboard
@@ -1935,12 +2039,14 @@ void pressOk()
 {
  if (menuItem==0)
    {
-    active=!active;  // Toggle function when "Enter" key pressed
-    if (!active) 
+    ee.active=!ee.active;  // Toggle function when "Enter" key pressed
+    if (!ee.active) 
      {
       setDisplayMenu(Stop_message,std_dly,0);
+#ifndef debugShortEnter
 #ifdef Beeper
-      beep (200,3);
+      beep (200,3); // alert about disabling the ventilator
+#endif           
 #endif           
      }
    }
@@ -1952,7 +2058,7 @@ void pressOk()
     menuItem=0;
     setDisplayMenu(Menu_message,std_dly,0);
    }
- if ((active) && (stepper.distanceToGo() == 0))  // If the motor is idle, start immediately
+ if ((ee.active) && (stepper.distanceToGo() == 0))  // If the motor is idle, start immediately
   {
    breathe=millis()-breathLength; // will happen immediately
   }
@@ -1976,6 +2082,7 @@ void pressPrevNext()
 //  if ((keys[btnNext]) && (menuItem<MenuItems-1)) {menuItem++;setDisplayMenu(Menu_message+10*menuItem,std_dly,0);}  // Next menu item (no rollover) 
 }
 
+
 void pressUpDown()
 {
  int n=0;
@@ -1985,71 +2092,43 @@ void pressUpDown()
   {
    case 0:
       if (n<0) dispParam=(dispParam==0)?1:0;  // button Dn triggers extended data
-      if (n>0) CVmode=!CVmode;                // button Up triggers control mode change
+      if (n>0) ee.CVmode=!ee.CVmode;                // button Up triggers control mode change
       if (dispParam) setDisplayMenu(Measurement_Message);
       if (n==1) setDisplayMenu(Measurement_Start);
       dispCnt=0;
      break;
    case 1:
-      reqBPM=reqBPM+(n*stepBPM);
+      ee.reqBPM=ee.reqBPM+(n*stepBPM);
      break;
    case 2:
-      reqVolume=reqVolume+(n*stepVolume);
+      ee.reqVolume=ee.reqVolume+(n*stepVolume);
      break;
    case 3:
-      reqCompression=reqCompression+(n*stepCompression);
+      ee.reqCompression=ee.reqCompression+(n*stepCompression);
      break;
    case 4:
-      syncRatio=syncRatio+(n*stepSyncRatio);
+      ee.peep=ee.peep+(n*stepPEEPCompression);
      break;
    case 5:
-      expirationRatio=expirationRatio+(n*stepExpirationRatio);
+      ee.syncRatio=ee.syncRatio+(n*stepsyncRatio);
+     break;
+   case 6:
+      ee.expirationRatio=ee.expirationRatio+(n*stepExpirationRatio);
+     break;
+   case 7:
+      ee.apnea=ee.apnea+(n*stepApnea);
      break;
   }
- limitValues(reqBPM,reqVolume,reqCompression,syncRatio,expirationRatio); 
+ ee.reqBPM          = constrain(ee.reqBPM, minBPM, maxBPM); 
+ ee.reqVolume       = constrain(ee.reqVolume, minVolume, maxVolume); 
+ ee.reqCompression  = constrain(ee.reqCompression, minCompression, maxCompression); 
+ ee.peep            = constrain(ee.peep, minPEEPCompression, maxPEEPCompression); 
+ ee.syncRatio       = constrain(ee.syncRatio, minsyncRatio, maxsyncRatio); 
+ ee.apnea           = constrain(ee.apnea, minApnea, maxApnea); 
+ ee.expirationRatio = constrain(ee.expirationRatio, minExpirationRatio, maxExpirationRatio); 
 }
 
 #endif
-
-#ifdef sweep
-/*
- *  When set values are changed, actual values are progressively changed from the current to the new value
- */
-void sweepValues()  
-{
- float f=max(reqBPM,BPM)*maxBPMchange;  // slowly change BPM value to reach requested BPM value
- limitValues(BPM,volume,compression,syncRatio,expirationRatio);
- if (BPM>reqBPM)
-   {
-    BPM=BPM-f;
-    if (BPM<reqBPM) BPM=reqBPM;
-   } else
-   {
-    BPM=BPM+f;
-    if (BPM>reqBPM) BPM=reqBPM;
-   }
- f=max(reqVolume,volume)*maxVolumeChange;  // slowly change volume value to reach requested volume value        
- if (volume>reqVolume)
-   {
-    volume=volume-f;
-    if (volume<reqVolume) volume=reqVolume;
-   } else
-   {
-    volume=volume+f;
-    if (volume>reqVolume) volume=reqVolume;
-   }  
- f=max(reqCompression,compression)*maxCompressionChange;  // slowly change ompression value to reach requested pressure value
- if (compression>reqCompression)
-   {
-    compression=compression-f;
-    if (compression<reqCompression) compression=reqCompression;
-   } else
-   {
-    compression=compression+f;
-    if (compression>reqCompression) compression=reqCompression;
-   }  
-}
-#endif 
 
 
 /*
@@ -2067,11 +2146,11 @@ void motorFastStop()
 #ifdef serialTelemetry
 void basicTelemetry(boolean b)
 {
- if (active)
+ if (ee.active)
   {
    if (!Mactive)
     {
-     startActive=millis();
+     startactive=millis();
      Mactive=true;
     }
    if (telemetry)
@@ -2080,7 +2159,7 @@ void basicTelemetry(boolean b)
 #ifdef ArduinoPlotter     
       Serial.println("Phase,Alarm,MotorPos,motorTarget,Pressure,AmbPress,Volume,Target,BreathLng,BreathIn,BreathInSpeed,BreathInAccel,BreathOut,BreathOutSpeed,BreathOutAccel"); 
 
-     //Serial.print(float(millis()-startActive)/1000);
+     //Serial.print(float(millis()-startactive)/1000);
      //sep();
      Serial.print(breathPhase*50);
      sep();
@@ -2093,7 +2172,7 @@ void basicTelemetry(boolean b)
      Serial.print(arduinoPlotterPressureOffset+relPressure*10);
 #else
       Serial.println("Time,Phase,Alarm,Motor pos,Pressure,Ambient press,Volume,Target,Breath lng,Breath in,Breath in speed,Breath in accel,Breath out,Breath out speed,Breath out accel"); 
-     Serial.print(float(millis()-startActive)/1000);
+     Serial.print(float(millis()-startactive)/1000);
      sep();
      Serial.print(breathPhase);
      sep();
@@ -2122,34 +2201,32 @@ void basicTelemetry(boolean b)
 
 void breathingCycleStart()
 {
-#ifdef sweep
- if (!allSet) sweepValues();      // Manage the ramp up / ramp down of parameters
-#else
- BPM=reqBPM;
- volume=reqVolume;
- compression=reqCompression;
-#endif 
+ pipValue=0; 
+ peepValue=9999;
+ BPM=ee.reqBPM;
+ volume=ee.reqVolume;
+ compression=ee.reqCompression;
  breathPhase=0;
  breathLength=int(60000/BPM); 
  breathe=millis();    // time for the next cycle start
- syncDelay=breathLength*syncRatio;
- breathTime=breathLength-syncDelay;
- breathIn=breathTime/(1+expirationRatio);
+ syncDelay=breathLength*ee.syncRatio;
+ breathTime=breathLength;
+ breathIn=breathTime/(1+ee.expirationRatio);
  breathOut=breathTime-breathIn;
- breathInSpeed=volume/breathIn;
- breathOutSpeed=volume/breathOut;
+ breathInSpeed=float(volume)/breathIn;
+ breathOutSpeed=float(volume)/breathOut;
  breathInAcceleration=breathInSpeed*breathInSpeed*motorAcceleration;
  breathOutAcceleration=breathOutSpeed*breathOutSpeed*motorAcceleration;
  motorTarget=volume*motorVolumeRatio;
 #ifdef serialTelemetry
- if (active)
+ if (ee.active)
   {
    if (telemetry)
     {
      basicTelemetry(false); 
      sep();
 #ifdef ArduinoPlotter     
-     Serial.print(arduinoPlotterOffset+long(ambientPressure)/1000);
+     Serial.print(arduinoPlotterOffset+long(ee.ambientPressure)/1000);
      sep();
      Serial.print(arduinoPlotterOffset+int(volume));
      sep();
@@ -2169,7 +2246,7 @@ void breathingCycleStart()
      sep();
      Serial.println(arduinoPlotterOffset+float(breathOutAcceleration)/50);
 #else     
-     Serial.print(long(ambientPressure));
+     Serial.print(long(ee.ambientPressure));
      sep();
      Serial.print(int(volume));
      sep();
@@ -2208,9 +2285,11 @@ void breathingCycleStart()
  Serial.println(breathOutSpeed);
 #endif
  breathGraphCnt=10;              // blinks the LED at the start of a cycle   
- stepper.setMaxSpeed(int(breathInSpeed*motorSpeed));
+ int i=int(breathInSpeed*motorSpeed);
+ if (i>motorMaxSpeed) i=motorMaxSpeed;
+ stepper.setMaxSpeed(i);
  stepper.setAcceleration(breathInAcceleration);
- if (active)  // When a real cycle is done (with the motor actually moving)
+ if (ee.active)  // When a real cycle is done (with the motor actually moving)
   {
 #ifdef disableMotorctrl // Optional ability to disable the motor after a time of inactivity
    if (!motorState)     // Useful to allow changing the ambubag and preserving energy on battery
@@ -2245,12 +2324,12 @@ void breathingCycleStart()
 
 void breathingInspiration ()
 {
- if (!CVmode)  // CP (Pressure Control) Mode
+ if (!ee.CVmode)  // CP (Pressure Control) Mode
   {
    if ((relPressure>compressionScale) && (breathPhase==1))  // Check for pressure
     {
      motorFastStop();
-#ifdef ActiveBeeper     
+#ifdef activeBeeper     
      if (stepper.currentPosition ()<(motorTarget)*failVolumeRatio) beep(300,1); // Insufficient volume alarm
 #endif        
     }
@@ -2295,7 +2374,9 @@ void breathingExpirationStart()
 #ifdef serialTelemetry
    basicTelemetry(true);
 #endif        
-   stepper.setMaxSpeed(int(breathOutSpeed*motorSpeed));
+   int i=int(breathOutSpeed*motorSpeed);
+   if (i>motorMaxSpeed) i=motorMaxSpeed;
+   stepper.setMaxSpeed(i);
    stepper.setAcceleration(breathOutAcceleration);
    stepper.moveTo(0);
   } 
@@ -2310,10 +2391,10 @@ void breathAssistTrigger()
     {
      breathPhase=4;
 #ifdef serialTelemetry
-     if (active) basicTelemetry(true);
+     if (ee.active) basicTelemetry(true);
 #endif        
     }
-   breathe=millis()-breathLength; // Trigger a new cycle sooner.
+   breathe=millis()-breathLength-syncDelay; // Trigger a new cycle sooner.
 #ifdef debug_1    // print data for user triggered cycle    
    Serial.print(relPressure);
    tab();
@@ -2335,22 +2416,12 @@ void loop() {
     tick=tick+samplePeriod;
     readSensors();
 #ifdef serialTelemetry
-   if (active) basicTelemetry(true);
+   if (ee.active) basicTelemetry(true);
 #endif
 #ifdef analogKeyboard
-   analogKeys=analogRead(pin_analogKeyboard);            // Buffered analog value for keyboard
-#ifdef debugAnalogKeyboard
-   Serial.print(F("Analog Key Value: "));
-   Serial.print(analogKeys); 
-   Serial.print(F("\t Tolerance (5%): "));
-   Serial.println(int(float(analogKeys) / 20)+1); 
-   analogKeys=0;  // Does not transmit keys when debugging the analog values.
-#endif
+   analogReadKeys(); 
 #endif
 
-#ifdef sweep
-    allSet=((reqBPM==BPM) && (reqVolume==volume) && (reqCompression==compression));
-#endif
     compressionScale=(compression>minCompression)?compression:defaultCompression;
     volumeScale=(volume>minVolume)?volume:defaultVolume;   
     if (breathPhase==1) breathingInspiration ();
@@ -2364,7 +2435,7 @@ void loop() {
     repeatCheck(btnUp);
     if (keys[btnOk])
      {
-      if ((menuItem==0) && active)  // stop request, add delay
+      if ((menuItem==0) && ee.active)  // stop request, add delay
        {
         if (okDelay==okLong) pressOk();        // Ok button
         if (okDelay<=okLong) okDelay++;
@@ -2395,20 +2466,45 @@ void loop() {
 #endif     
 #endif     
 #ifdef disableMotorctrl                  // after being inactive for a while, the motor is disabled
-     if (active) lastActive=millis();
-     if (millis()>lastActive+motorOffDelay) 
+     if (ee.active) lastactive=millis();
+     if (millis()>lastactive+motorOffDelay) 
       {
        digitalWrite(pin_Stepper_Disable, HIGH);  // Deactivate
        motorState=LOW; 
       }
 #endif     
    }
-  if ((millis()>breathe+breathLength) && (stepper.currentPosition()>0)) breathe=millis()-breathLength+50; // wait for the previous cycle to finish (safety)
+  if ((menuItem==0) && (millis()>lastValChange+200) && ((pipValue!=displayPip) || (peepValue!=displayPeep)))
+   {
+    if (!ee.active)
+     {
+       setDisplayMenu(Menu_message,std_dly,0);
+     }
+     else
+     {
+      displayPip=pipValue;
+      if (peepValue<9999) displayPeep=peepValue;
+      setDisplayMenu(PIP_PEEP);
+     }
+   }
+  if ((millis()>breathe+breathLength+syncDelay) && (stepper.currentPosition()>0)) breathe=millis()-breathLength+50; // wait for the previous cycle to finish (safety)
    else
    {
-    if (millis()>breathe+breathLength) breathingCycleStart(); // start of a cycle
+    if (relPressure>pipValue)
+     {
+      pipValue=relPressure;  
+      lastValChange=millis();
+     }
+    if ((breathPhase>1) && (relPressure<peepValue))
+     {
+      peepValue=relPressure;  
+      lastValChange=millis();
+     }
+    
+    if (millis()>breathe+breathLength+syncDelay) breathingCycleStart(); // start of a cycle
     if ((millis()>breathe+breathIn) && (stepper.distanceToGo() == 0)) breathingExpirationStart(); // second half of a cycle
-    if ((syncDelay) && ((millis()>breathe+breathLength-syncDelay+20) || ((breathPhase==2) && (stepper.distanceToGo() == 0))))  // Synchronization period
+
+    if ((breathPhase==2) && (stepper.distanceToGo() == 0))  // Synchronization period
      {
       breathPhase=3;
       breathAssistTrigger();
