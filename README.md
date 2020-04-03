@@ -11,7 +11,7 @@ Short video presentation / demo :
 
 (I'm not a youtuber and English's not my main language, you've been warned !)
 
-NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification) have been issued by the UK government. This controller strives to follow these guidelines.
+NOTE: Requirements for a [minimal emergency ventilator device](https://www.gov.uk/government/publications/coronavirus-covid-19-ventilator-supply-specification/rapidly-manufactured-ventilator-system-specification) have been issued by the UK government, and now the WHO as part of a [Disease commodity package](https://www.who.int/publications-detail/disease-commodity-package---novel-coronavirus-(ncov)). This controller strives to follow these guidelines.
 
 Thanks to [uxvrob](https://github.com/uxvrob) we now have a [complete schematic diagram](https://github.com/ermtl/Open-Source-Ventilator/blob/master/hardware/OpenSourceVentilator_sch.pdf) so that the controller can be tested.
 
