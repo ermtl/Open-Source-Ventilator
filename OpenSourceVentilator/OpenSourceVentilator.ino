@@ -173,6 +173,8 @@
          - reorganisation of items stored in EEPROM. They are now included in a struct and their name starts with ee.
            This will allow easy expansion of the variables stored in EEPROM and the way to treat them as a whole.
          
+    0.23 Bug fix with TM1638 display
+         When using TM1638 for the display, the menu was broken and displayed an error message.
          
 
     GPL V3 Licence
@@ -219,15 +221,15 @@
 #define minVolume                 100     // minimum respiratory volume in milliliters 
 #define defaultVolume             400     // default respiratory volume in milliliters 
 #define stepVolume                 20     // adjustment step for respiratory volume in milliliters 
-#define maxVolume                 800     // maximum respiratory volume in milliliters 
+#define maxVolume                 950     // maximum respiratory volume in milliliters 
 #define minCompression             10     // minimum compression for the ambu-bag in cm H2O
 #define stepCompression             2     // adjustment step for compression for the ambu-bag in cm H2O
 #define defaultCompression         20     // default compression for the ambu-bag in cm H2O
-#define maxCompression             60     // maximum compression for the ambu-bag in cm H2O
+#define maxCompression             80     // maximum compression for the ambu-bag in cm H2O
 #define minPEEPCompression          0     // minimum post expiration compression for the ambu-bag in cm H2O
 #define stepPEEPCompression         1     // adjustment step for post expiration compression for the ambu-bag in cm H2O
 #define defaultPEEPCompression      4     // default post expiration compression for the ambu-bag in cm H2O
-#define maxPEEPCompression         20     // maximum post expiration compression for the ambu-bag in cm H2O
+#define maxPEEPCompression         25     // maximum post expiration compression for the ambu-bag in cm H2O
 #define minApnea                    0     // minimum value (no detection, no alarm)
 #define stepApnea                   1     // adjustment step for apnea alarm (in breathing cycles)
 #define defaultApnea                2     // default apnea alarm
@@ -434,17 +436,6 @@
 #undef debug_6
 #undef debug_7
 #undef debug_8
-#undef debug_9
-#undef debug_10
-#undef debug_11
-#undef debug_12
-#undef debug_13
-#undef debug_14
-#undef debug_15
-#undef debug_16
-#undef debug_17
-#undef debug_18
-#undef debug_19
 #endif
 
 //********************************   CONNECTION PINS   ********************************
@@ -596,7 +587,9 @@ const int KbdTols[] = {17,26,39,47,52};
 
 
 #ifdef TM1638Display
-//#define dispBufferLength 12
+#ifndef PCF8574LCDDisplay
+#define dispBufferLength 12
+#endif
 #endif
 #ifdef PCF8574LCDDisplay
 #define dispBufferLength 40
@@ -759,7 +752,7 @@ byte    sc,                    // counter for displaying debugging info about th
         barGraph,              // segments of the pressure bar graph
         bargraphDot,           // rate indicator blinking segment on the bargraph
         menuItem,              // Menu item currently being set by the user
-        alarmNum,               // 0 normal, else alarm number
+        alarmNum,              // 0 normal, else alarm number
         dispTick;              // Auxilary value for the dislpay. Can be used as a blink counter or similar 
 uint16_t mBargraph;            // previous display on the bargraph
  
@@ -1371,7 +1364,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 1:
-     strcpy(disp,"Software V0.22\n             ");
+     strcpy(disp,"Software V0.23\n             ");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1494,7 +1487,7 @@ void displayMenu()
      dispPhase++;
     break;
   case 5:
-     strcpy(disp,"SOFT 0.22");
+     strcpy(disp,"SOFT 0.23");
      dispDelay=100;
      dispPhase=100;
     break;
@@ -1508,14 +1501,25 @@ void displayMenu()
     break;
   case 12:
      strcpy(disp,"UNKNOWN");
-     dispPhase=99;
+     dispPhase=29;
     break;
-  case 99:
+  case 29:
      strcpy(disp,"SENSOR");
      dispPhase=10;
     break;
+  case PIP_PEEP:
+     //if (dispTick++ & 1) 
+     // sprintf(disp,"PIP  %d  ",displayPip);
+     // else
+     // sprintf(disp,"PEEP %d  ",displayPeep);
+     //dispDelay=10;  
+     dispPhase=100;
+    break;
   case 100:
-      sprintf(disp,"%02d %d %d",BPM,volume,compression);
+     if(dispTick++ & 1)
+      sprintf(disp,"%02d %d",BPM,volume);
+      else
+      sprintf(disp,"P %d",compression);
      dispDelay=100;  
      if (ee.active) dispPhase=(dispParam==0)?100:103; else dispPhase++;
     break;
@@ -1569,16 +1573,16 @@ void displayMenu()
      dispDelay=60;  
     break;
   case 140:
-     sprintf(disp,(dispTick++ & 1)?"SET   %d":"PEEP. %d",int(ee.peep));
+     sprintf(disp,(dispTick++ & 1)?"SET  %2d":"PEEP %2d",int(ee.peep));
      dispDelay=60;  
     break;
   case 150:
-     sprintf(disp,(dispTick++ & 1)?"SET   %2d":"SYNC.  %2d",int(ee.syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
+     sprintf(disp,(dispTick++ & 1)?"SET  %2d":"SYNC. %2d",int(ee.syncRatio*100.1)); // 100.1 instead of 100 prevents rounding errors
      dispDelay=60;  
     break;
   case 160:
      dispTick++;
-     sprintf(disp,"\nSET EXP Ratio  %d.%d",int(ee.expirationRatio),int (ee.expirationRatio*10) %10); 
+     sprintf(disp,(dispTick++ & 1)?"SET %d.%d":"I-E. %d.%d",int(ee.expirationRatio),int (ee.expirationRatio*10) %10); // 100.1 instead of 100 prevents rounding errors
      dispDelay=60;  
     break;
   case 170:
@@ -1958,7 +1962,7 @@ void setup() {
  Serial.begin(SERIAL_BAUD);
  while (!Serial && millis()<3000); // wait for USB Serial ready. Needed for native USB (non blocking)
  term=Serial; 
- if (term) Serial.println(F("Open Source Ventilator V 0.22"));
+ if (term) Serial.println(F("Open Source Ventilator V 0.23"));
 #ifdef jm_Wire
  twi_readFrom_wait = true; // twi_readFrom() waiting loop
  twi_writeTo_wait = true;  // twi_writeTo() waiting loop
