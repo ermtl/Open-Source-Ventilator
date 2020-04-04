@@ -302,4 +302,28 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          does not allow it, so data needs to be changed using the physical keyboard.
          A 3D printed faceplate containing the display, the buttons and the buzzer is available (including FreeCAD drawing)
          in the 3D-Print directory .
-         While graphing the data, a few corrections were made to the trajectory engine.           
+         While graphing the data, a few corrections were made to the trajectory engine.    
+
+    0.21 Pressure unit converted to cm H2O / minor changes
+         
+         - This version implements the requested change in pressure units as the medical community uses cm H2O and the sensors use Pa.
+         - The 'Up' and 'Down' keys now have an auto repeat.
+         - When the ventilator is active and 'Enter' is used to stop it, the key press must be pressed 2 seconds and an alarm is sounded.
+         - The data dispay includes ambiant pressure (can be used to check negative pressure rooms)
+         - It now uses the updated TM1638 library (Version 1.4+), you need to update or you'll have a compile error.
+         - #define I2CCheck : displays a list of the I2C devices found upon startup (only for debug or for external HMI)
+
+    0.22 Misc. changes
+
+         - PEEP parameter added
+         - Apnea alarm parameter added
+         - Display PIP and PEEP in real time (in progress)
+         - The bargraph (pressure in VC mode, volume in PC mode) is now displayed on the LCD
+         - New automatic motor speed limit to prevent interrupt overflow (interrupt limited reentrancy)
+         - reorganisation of items stored in EEPROM. They are now included in a struct and their name starts with ee.
+           This will allow easy expansion of the variables stored in EEPROM and the way to treat them as a whole.
+         
+    0.23 Bug fix with TM1638 display
+         When using TM1638 for the display, the menu was broken and displayed an error message.
+         
+                
