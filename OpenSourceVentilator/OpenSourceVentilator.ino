@@ -496,7 +496,7 @@
 
        
 #ifdef I2C
-#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
+//#define jm_Wire                 // The jm_wire library corrects the longstanding I2C hanging problem with the arduino Wire library.
 #ifdef jm_Wire
 #include <jm_Wire.h>              // I2C protocol, contains a workaround for a longstanding issue with the Wire library
                                   // by Jean-Marc Paratte - https://github.com/jmparatte/jm_Wire
