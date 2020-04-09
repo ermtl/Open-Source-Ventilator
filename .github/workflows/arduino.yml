@@ -1,0 +1,32 @@
+name: Arduino
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Install CLI
+        uses: arduino/setup-arduino-cli@v1.0.0
+
+      - name: Install platform
+        run: |
+          arduino-cli core update-index
+          arduino-cli install arduino:avr
+
+      - name: Install dependencies
+        run: |
+          arduino-cli lib install AccelStepper
+          arduino-cli lib install Adafruit_SleepyDog_Library
+          arduino-cli lib install BME280
+          arduino-cli lib install LiquidCrystal_PCF8574
+          arduino-cli lib install TimerOne
+
+      - name: Compile
+        run: arduino-cli compile --fqbn arduino:avr:uno OpenSourceVentilator/
