@@ -18,7 +18,7 @@ jobs:
       - name: Install platform
         run: |
           arduino-cli core update-index
-          arduino-cli install arduino:avr
+          arduino-cli core install arduino:avr
 
       - name: Install dependencies
         run: |
