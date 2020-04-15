@@ -7,7 +7,7 @@ Video presentation / demo :
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=0-nGLLX1W8E
 " target="_blank"><img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/CNC/Ventilator.jpg" 
- width="480" height="360" border="10" /></a>
+ width="720" height="360" border="10" /></a>
 
 Control software for an emergency medical ventilator.
 
