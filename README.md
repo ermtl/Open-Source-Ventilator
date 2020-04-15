@@ -1,6 +1,7 @@
 # Open-Source-Ventilator
 
 The project now contains a complete functional ventilator (prototype stage) with both the controller, and the complete mechanical design, all the 3D printed parts (both STL & CAD files) as well as the CNC files for the box.
+
 The complete part list will be updated soon.
 
 Video presentation / demo : 
