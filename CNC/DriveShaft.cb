@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<CADFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="0.9.8.0" Name="DriveShaft" units="Inches">
+<CADFile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="0.9.8.0" Name="DriveShaft" units="Inches">
   <layers>
     <layer name="Default" color="127,255,0">
-      <ModificationCount>0</ModificationCount>
       <objects>
         <pline id="1">
-          <ModificationCount>14</ModificationCount>
+          <ModificationCount>16</ModificationCount>
           <mat m="Identity" />
           <pts>
             <p>1.375,-0.0625,0</p>
@@ -13,7 +12,7 @@
           </pts>
         </pline>
         <rect id="2" Closed="true" p="0,-0.15625,0" w="1.75" h="0.3125">
-          <ModificationCount>86</ModificationCount>
+          <ModificationCount>88</ModificationCount>
           <mat m="Identity" />
           <pts>
             <p>0,-0.15625,0</p>
@@ -23,6 +22,7 @@
           </pts>
         </rect>
       </objects>
+      <ModificationCount>0</ModificationCount>
     </layer>
   </layers>
   <MachiningOptions>
@@ -37,30 +37,7 @@
   <parts>
     <part Name="Part1">
       <machineops>
-        <profile>
-          <WorkPlane state="Default">XY</WorkPlane>
-          <OptimisationMode state="Default">Experimental</OptimisationMode>
-          <RoughingFinishing state="Value">Finishing</RoughingFinishing>
-          <ToolDiameter state="Value">0.125</ToolDiameter>
-          <ToolNumber state="Value">3</ToolNumber>
-          <ToolProfile state="Default">Unspecified</ToolProfile>
-          <PlungeFeedrate state="Value">2</PlungeFeedrate>
-          <CutFeedrate state="Value">20</CutFeedrate>
-          <MaxCrossoverDistance state="Default">0.7</MaxCrossoverDistance>
-          <StartPoint state="Default" />
-          <CustomMOPHeader state="Default" />
-          <CustomMOPFooter state="Default" />
-          <Name>Profile1</Name>
-          <StockSurface state="Default">0</StockSurface>
-          <RoughingClearance state="Default">0</RoughingClearance>
-          <ClearancePlane state="Value">0.2</ClearancePlane>
-          <SpindleDirection state="Default">CW</SpindleDirection>
-          <SpindleSpeed state="Default">1000</SpindleSpeed>
-          <SpindleRange state="Default">0</SpindleRange>
-          <VelocityMode state="Default">Undefined</VelocityMode>
-          <primitive>
-            <prim>1</prim>
-          </primitive>
+        <profile Enabled="true">
           <TargetDepth state="Value">-0.35</TargetDepth>
           <DepthIncrement state="Value">0.008</DepthIncrement>
           <FinalDepthIncrement state="Default">0</FinalDepthIncrement>
@@ -86,6 +63,29 @@
             <TabStyle>Triangle</TabStyle>
           </HoldingTabs>
           <SideProfile state="Default" />
+          <StockSurface state="Default">0</StockSurface>
+          <RoughingClearance state="Default">0</RoughingClearance>
+          <ClearancePlane state="Value">0.2</ClearancePlane>
+          <SpindleDirection state="Default">CW</SpindleDirection>
+          <SpindleSpeed state="Default">1000</SpindleSpeed>
+          <SpindleRange state="Default">0</SpindleRange>
+          <VelocityMode state="Default">Undefined</VelocityMode>
+          <primitive>
+            <prim>1</prim>
+          </primitive>
+          <WorkPlane state="Default">XY</WorkPlane>
+          <OptimisationMode state="Default">Experimental</OptimisationMode>
+          <RoughingFinishing state="Value">Finishing</RoughingFinishing>
+          <ToolDiameter state="Value">0.125</ToolDiameter>
+          <ToolNumber state="Value">3</ToolNumber>
+          <ToolProfile state="Default">Unspecified</ToolProfile>
+          <PlungeFeedrate state="Value">1.5</PlungeFeedrate>
+          <CutFeedrate state="Value">20</CutFeedrate>
+          <MaxCrossoverDistance state="Default">0.7</MaxCrossoverDistance>
+          <StartPoint state="Default" />
+          <CustomMOPHeader state="Default" />
+          <CustomMOPFooter state="Default" />
+          <Name>Profile1</Name>
         </profile>
       </machineops>
       <Stock>
@@ -93,7 +93,6 @@
         <PMax>0,0</PMax>
         <Color>255,165,0</Color>
       </Stock>
-      <ToolProfile>Unspecified</ToolProfile>
       <Nesting>
         <BasePoint>0,0</BasePoint>
         <NestMethod>None</NestMethod>
