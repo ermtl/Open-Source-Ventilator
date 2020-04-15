@@ -12,9 +12,11 @@ Video presentation / demo :
 
 
 The mechanism uses a simple but effective drive mechanism based on a single high strength nylon or polyester webbing strap to squeeze the bag from both sides with minimal mechanical losses.
-This design (author unknown) inspired me to explore this solution. 
+This design (author unknown) inspired me to explore this solution.
+
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/Strap-Mechanism.png" 
- width="333" height="355" border="5" />
+ width="222" height="237" border="5" />
+
 A major change was to use a much smaller diameter aluminum shaft instead of a drum as this gives the required torque. Also lateral guides are added to ensure a better stability. Also the parts in contact with the BVM are convex instead of being concaveas this allows to extract more air with minimal force and without damaging the BVM.
 
 The motor is also more powerful than in other designs I've seen, allowing it to compress the BVM fast and at high pressure.
