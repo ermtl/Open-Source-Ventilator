@@ -17,11 +17,12 @@ This design (author unknown) inspired me to explore this solution.
 <img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/Resources/img/Strap-Mechanism.png" 
  width="222" height="237" border="5" />
 
-A major change was to use a much smaller diameter aluminum shaft instead of a drum as this gives the required torque. Also lateral guides are added to ensure a better stability. Also the parts in contact with the BVM are convex instead of being concaveas this allows to extract more air with minimal force and without damaging the BVM.
+A major change was to use a much smaller diameter aluminum shaft instead of a drum as this gives the required torque. Also lateral guides are added to ensure a better stability. Also the parts in contact with the BVM are convex instead of being concave as the shape squeezes the BVM in a way that allows to extract more air with minimal force and without damaging the BVM.
 
-The motor is also more powerful than in other designs I've seen, allowing it to compress the BVM fast and at high pressure.
+The motor is also more powerful than in many other designs I've seen while retaining position control, allowing it to compress the BVM fast, precisely even at high pressure.
 
-Control software for an emergency medical ventilator.
+
+The previously released control software is compatible with this mechanical design and many others.
 
 This software is designed to control a Bag Valve Mask (BVM) AmbuBag medical Ventilator as part of the global effort to develop a fast, effective, easily replicable device using distributed digital manufacturing techniques including 3D printing, CNC or laser cutting. The project uses an Arduino Nano with Atmega328P. The software can be used with a wide range of mechanical designs.
 
