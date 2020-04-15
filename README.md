@@ -19,7 +19,7 @@ This design (author unknown) inspired me to explore this solution.
 
 A major change was to use a much smaller diameter aluminum shaft instead of a drum as this gives the required torque. Also lateral guides are added to ensure a better stability. Also the parts in contact with the BVM are convex instead of being concave as the shape squeezes the BVM in a way that allows to extract more air with minimal force and without damaging the BVM.
 
-The motor is also more powerful than in many other designs I've seen while retaining position control, allowing it to compress the BVM fast, precisely even at high pressure.
+The motor is also more powerful than in many other designs I've seen while retaining good position control, allowing it to compress the BVM fast, precisely even at high pressure.
 
 
 The previously released control software is compatible with this mechanical design and many others.
