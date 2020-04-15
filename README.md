@@ -1,5 +1,15 @@
 # Open-Source-Ventilator
-Complete control software for an emergency medical ventilator.
+
+The project now contains a complete functional ventilator (prototype stage) with both the controller, and the complete mechanical design, all the 3D printed parts (both STL & CAD files) as well as the CNC files for the box.
+The complete part list will be updated soon.
+
+Video presentation / demo : 
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=0-nGLLX1W8E
+" target="_blank"><img src="https://raw.githubusercontent.com/ermtl/Open-Source-Ventilator/master/CNC/Ventilator.jpg" 
+ width="480" height="360" border="10" /></a>
+
+Control software for an emergency medical ventilator.
 
 This software is designed to control a Bag Valve Mask (BVM) AmbuBag medical Ventilator as part of the global effort to develop a fast, effective, easily replicable device using distributed digital manufacturing techniques including 3D printing, CNC or laser cutting. The project uses an Arduino Nano with Atmega328P. The software can be used with a wide range of mechanical designs.
 
@@ -326,4 +336,20 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
     0.23 Bug fix with TM1638 display
          When using TM1638 for the display, the menu was broken and displayed an error message.
          
-                
+    0.3 Complete ventilator release with plans, 3D prints and CNC 
+         Complete ventilator release with plans, CAD for 3D prints and CNC
+         non linear relation between air volume and motor target position (allows for better adaptation to various non linear   
+         mechanisms).
+         defining debug_6 allows to check the raw / translated values.
+         fix for HD44780 occasionnal display garbling (I2C bus error recovery), requires patched LiquidCrystal_PCF8574 library
+         fix for AccelStepper library being too slow to drive microstepped motors, requires patched AccelStepper library
+         there is now a separate "OpenSourceVentilator.h" file that contains OEM parameters. 
+         This prevents custom changes from being reverted with each new version.
+         First version of proportional pressure control  
+         Now displays actual volume + actual BPM while breathing
+         bug fixes in EEPROM save and restore functions
+         bug fix for a mistake that delayed breathing restart
+         use of function and unsigned long to prevent millis() rollover problems
+         
+         thanks to anyone who submitted a bug report!
+                    
