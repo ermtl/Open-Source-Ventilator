@@ -350,6 +350,7 @@ A bug that allowed floating point variables retrieved from a garbage filled EEPR
          When using TM1638 for the display, the menu was broken and displayed an error message.
          
     0.3 Complete ventilator release with plans, 3D prints and CNC 
+    
          Complete ventilator release with plans, CAD for 3D prints and CNC
          non linear relation between air volume and motor target position (allows for better adaptation to various non linear   
          mechanisms).
