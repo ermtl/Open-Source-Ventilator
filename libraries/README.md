@@ -1,3 +1,5 @@
-To properly compile the OpenSourceVentilator.ino controller, the AccelStepper and LiquidCrystal_PCF8574 libraries have to use a patched version.
+To properly compile the OpenSourceVentilator.ino controller with the #define LCDReset option, the AccelStepper and LiquidCrystal_PCF8574 libraries have to use a patched version.
 
-Simply overwrite the files in your arduino libraries folder/subdirectory.
+AccelStepper will be further modified to allow finer microstepping.
+
+Simply overwrite the files with the same name in your arduino libraries folder/subdirectory.
