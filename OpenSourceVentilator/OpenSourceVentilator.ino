@@ -366,7 +366,8 @@
 
 #ifdef PCF8574LCDDisplay           // LCD with PCF8574 "backpack"
 #include <LiquidCrystal_PCF8574.h> // Matthias Hertel - http://www.mathertel.de/Arduino/LiquidCrystal_PCF8574.aspx 
-#define LCDReset
+//#define LCDReset                 // This should be enabled to prevent occasional LCD display garbling (known issue with byte
+                                   // nibble error over I2C) but this require a patched library (see the 'libraries' directory).  
 #endif
 
        
