@@ -2,4 +2,4 @@ To properly compile the OpenSourceVentilator.ino controller with the #define LCD
 
 AccelStepper will be further modified to allow finer microstepping.
 
-Simply overwrite the files with the same name in your arduino libraries folder/subdirectory.
+Simply overwrite the files with the same name in your arduino libraries folder/subdirectory. This is a quickfix, a proper solution will be used shortly.
