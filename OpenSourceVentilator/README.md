@@ -51,5 +51,17 @@ here is a list of the libraries used by OpenSourceVentilator and the files that 
  
    File /libraries/LiquidCrystal_PCF8574/src/LiquidCrystal_PCF8574.cpp
  
+ - "Adafruit_MPRLS_Library" (pressure sensor)
+
+   File /libraries/Adafruit_MPRLS_Library/Adafruit_MPRLS.cpp
+
+   File /libraries/Adafruit_MPRLS_Library/Adafruit_MPRLS.h
+
+ - "LiquidCrystal_I2C" (various LCD character displays)
+
+   File /libraries/LiquidCrystal_I2C/LiquidCrystal_I2C.cpp
+   
+   File /libraries/LiquidCrystal_I2C/LiquidCrystal_I2C.h
+
 
 As I become aware of other libraries used in the project, they will be added to this list.
