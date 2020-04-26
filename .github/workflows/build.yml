@@ -28,6 +28,6 @@ jobs:
         path: OpenSourceVentilator
         arduino-board-fqbn: arduino:avr:nano
         arduino-platform: arduino:avr@1.8.2
-        required-libraries: AccelStepper,LiquidCrystal_PCF8574
+        required-libraries: AccelStepper,LiquidCrystal_PCF8574,jm_Wire
         sketch-names: OpenSourceVentilator.ino
       
